@@ -39,6 +39,11 @@ event.pull = function(name, timeout)
         coroutine.yield()
     until signal[1] == name and computer.uptime() >= time
     ::loopEnd::
+    if _G.eventListeners[name] ~= nil then
+        for _, h in pairs(_G.eventListeners[name]) do
+            h.func(table.unpack(signal, 1, signal.n))
+        end
+    end
     return table.pack(table.unpack(signal, 1, signal.n))
 end
 

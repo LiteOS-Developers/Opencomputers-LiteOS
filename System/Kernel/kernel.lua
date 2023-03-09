@@ -91,7 +91,7 @@ end):start()
 
 _G.keys = {}
 
-event.listen("key_up", function(_, addr, char, code, player)
+--[[event.listen("key_up", function(_, addr, char, code, player)
     if #_G.keys ~= 0 then
         for i, v in pairs(_G.keys) do
             if rmFloat(v.char) == rmFloat(char) and rmFloat(v.code) == rmFloat(code) then
@@ -102,8 +102,9 @@ event.listen("key_up", function(_, addr, char, code, player)
     end
 end)
 event.listen("key_down", function(_, addr, chr, cd, player) 
+    _G.write(utf8.char(chr))
     table.insert(_G.keys, {char=chr, code=cd})
-end)
+end)]]
 
 
 local syscalls = service.getService("Syscalls")
