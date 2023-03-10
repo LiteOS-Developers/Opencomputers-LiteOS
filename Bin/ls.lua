@@ -22,11 +22,11 @@ local function trunc(str, len)
 end
 local function nod(n)
     return n and (tostring(n):gsub("(%.[0-9]+)0+$","%1")) or "0"
-  end
+end
 local function pad(txt)
     txt = tostring(txt)
     return #txt >= 2 and txt or "0"..txt
-  end
+end
 
 local function formatDate(epochms)
     --local day_names={"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"}
@@ -40,7 +40,7 @@ end
 return {
     features = {},
     main=function(granted, args)
-        _G.write(dump(_G.devices["tty0"]))
+        -- _G.write(dump(_G.devices["tty0"]))
         local shell = syscall("getDevice", "tty0")
         _G.write(dump(shell))
         local dir = shell:getpwd()

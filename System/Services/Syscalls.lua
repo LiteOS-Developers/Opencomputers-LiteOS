@@ -28,14 +28,15 @@ api.fdLastEdit = function(file)
     return fs.getLastEdit(file)
 end
 api.getDevice = function(name)
+    _G.write("getDevice(" .. dump(table.keys(_G.devices)) .. ")" )
     local dev = _G.devices[name]
-    -- _G.write("getDevice(" .. dump(name) .. "): " .. dump(table.keys(_G.devices)) .. " " .. dump(dev))
     return dev
 end
 api.addDevice = function(data)
-    _G.write("Creating Device " .. data[1] .. "")
+    _G.write("Creating Device " .. dump(data) .. "")
     _G.devices[data[1]] = data[2]
     -- _G.write("result: " .. dump(_G.devices[data[1]]))
+    return _G.devices[data[1]] ~= nil
 end
 
 return api

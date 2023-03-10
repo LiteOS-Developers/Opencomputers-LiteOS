@@ -5,8 +5,8 @@ local users = require("System.Users")
 function print(msg, newLine)
     _G.write(msg, newLine)
 end
-
 function syscall(name, ...)
+    _G.write(dump(coroutine.yield))
     local result = coroutine.yield("syscall", name, ...)
     _G.write("syscall(" .. name .. ") -> " .. dump(result))
     return result
@@ -14,6 +14,7 @@ end
 
 shell.getTTY = function(name)
     local d = syscall("getDevice", name)
+    _G.write("READ DEVICES LIST: " .. dump(d))
     if d == nil then
         _G.write("D IS NIL x1")
         return nil
@@ -22,10 +23,12 @@ shell.getTTY = function(name)
         _G.write("D IS NIL x2")
         return
     end
-    if d.type_ == "shell" then
+    d = d[1]
+    if d.devicetype == "shell" then
+        _G.write("FOUND EXISITING SHELL")
         return d.api
     end
-    _G.write("D IS NIL x3")
+    _G.write("D IS NIL x3: " .. dump(d["devicetype"]))
 
     return nil
 end
@@ -69,6 +72,7 @@ local appEnv = {
     rawlen=_G.rawlen,
     checkArg=_G.checkArg,
     dump=_G.dump,
+    coroutine = coroutine,
 }
 
 local simPrint = function(s)
@@ -299,15 +303,16 @@ shell.create = function(pwd, devicename)
     function sh:createDevice(devicename)
         -- _G.write(dump(devicename ~= nil and syscall("getDevice", devicename) == nil))
         simPrint("Name: " .. dump(syscall("getDevice", devicename)))
-        coroutine.yield()
-        if devicename ~= nil and syscall("getDevice", devicename) == nil then
+        local condition = devicename ~= nil and syscall("getDevice", devicename) == nil
+        if condition then
             _G.write("STORE")
-            syscall("addDevice", {devicename, {type_ = "shell", api = sh}})
+            syscall("addDevice", {devicename, {devicetype = "shell", api = sh}})
             if syscall("getDevice", devicename) == nil then
                 _G.write("[E] Device creation Failed")
             end
+            return
         else
-            _G.write("RESULT OF createDevice " .. dump(devicename) .. " " .. dump(devicename ~= nil and syscall("getDevice", devicename) == nil))
+            _G.write("RESULT OF createDevice " .. dump(devicename) .. " " .. dump(condition))
 
         end
     end
