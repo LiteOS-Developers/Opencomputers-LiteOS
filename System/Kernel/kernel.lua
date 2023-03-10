@@ -117,12 +117,12 @@ while true do
             goto continue
         end
         result = table.pack(coroutine.resume(v.coro))
-        _G.write("SWAP: " .. dump(result))
+        -- _G.write("SWAP: " .. dump(result))
         if result[1] == true and result.n >= 3 then
             if result[2] == "syscall" then
                 local call = result[3]
                 local data = result[4] or {}
-                _G.write("CALL: " .. dump(call))
+                -- _G.write("CALL: " .. dump(call))
                 if call == "getDevice" then
                     local r = table.pack(syscalls[call](data))
                     _G.write("getDevice: " .. dump(_G.devices["tty0"]))
