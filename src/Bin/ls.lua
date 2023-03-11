@@ -40,9 +40,8 @@ end
 return {
     features = {},
     main=function(granted, args)
-        -- _G.write(dump(_G.devices["tty0"]))
-        local shell = syscall("getDevice", "tty0")
-        _G.write(dump(shell))
+        local shell = getTTY("tty0")
+        -- _G.write(dump(shell))
         local dir = shell:getpwd()
         if #args >= 2 then
             dir = shell:resolvePath(args[2])
@@ -54,7 +53,6 @@ return {
         end
         local size = 0 
         local abs = ""
-
         local files = fs.listDir(dir)
         files.n = nil
         local gpu = shell:getGPU()

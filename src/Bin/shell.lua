@@ -13,11 +13,9 @@ api.main = function(grantedFeatures, args)
         error("Feature FEAT_USER_AUTH isn't granted!")
     end
     local sh = shell.getTTY("tty0") 
-    _G.write("getTTY: " .. dump(sh))
     if sh == nil then
         sh = shell.create("/")
     end
-    _G.write("end")
 
     local result = sh:auth()
     sh:print("Logged In")
