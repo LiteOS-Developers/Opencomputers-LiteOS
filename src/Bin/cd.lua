@@ -1,8 +1,10 @@
 return {
-    main=function(args)
-        if #args >= 2 then
-            local dir = shell:resolvePath(args[2])
-            if service.getService("filesystem").isDirectory(dir) then
+    main=function(granted, args)
+        local shell = getTTY("tty")
+        -- _G.write(dump(table.keys(_G.devices)))
+        if #args >= 1 then
+            local dir = shell:resolvePath(args[1])
+            if syscall("isDirectory", dir) then
                 shell:chdir(dir)
             else
                 shell:setFore(0xF00000)

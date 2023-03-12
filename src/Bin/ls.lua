@@ -38,10 +38,8 @@ local function formatDate(epochms)
 end
 
 return {
-    features = {},
     main=function(granted, args)
-        local shell = getTTY("tty0")
-        -- _G.write(dump(shell))
+        shell = getTTY("tty")
         local dir = shell:getpwd()
         if #args >= 2 then
             dir = shell:resolvePath(args[2])
@@ -54,6 +52,7 @@ return {
         local size = 0 
         local abs = ""
         local files = fs.listDir(dir)
+        -- _G.write(dump(files))
         files.n = nil
         local gpu = shell:getGPU()
         local w,h = gpu.getResolution()

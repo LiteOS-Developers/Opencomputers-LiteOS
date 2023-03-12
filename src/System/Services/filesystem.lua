@@ -1,6 +1,7 @@
 local api = {}
 
 mounts = {}
+handles = {}
 
 local function getAddrAndPath(_path)
     if _path:sub(1, 1) ~= "/" then _path = "/" .. _path end
@@ -85,44 +86,42 @@ api.isDirectory = function(path)
     return component.invoke(addr, "exists", resPath) and component.invoke(addr, "isDirectory", resPath)
 end
 
+api.read = function(handle, size)
+    checkArg(1, handle, "number")
+    checkArg(2, size, "number")
+    return component.invoke(handles[handle].addr, "read", handles[handle].handle, size)
+end
+
+api.write = function(handle, buf)
+    checkArg(1, handle, "number")
+    checkArg(2, buf, "string")
+    return component.invoke(handles[handle].addr, "write", handles[handle].handle, buf)
+end
+api.seek = function(handle, _whence, offset)
+    checkArg(1, handle, "number")
+    checkArg(2, _whence, "number")
+    checkArg(3, offset, "number")
+    return component.invoke(handles[handle].addr, "seek", handles[handle].handle, _whence, offset)
+end
+api.close = function(handle)
+    checkArg(1, handle, "number")
+    component.invoke(handles[handle].addr, "close", handles[handle].handle)
+end
+
 api.open = function(path, mode)
     checkArg(1, path, "string")
     checkArg(2, mode, "string")
 
     local addr, resPath = getAddrAndPath(path)
     if addr == nil then
-        error("File Not Existing: " .. path)
+        error("No such file or directory: " .. path)
     end
     if not api.isFile(path) then
-        return nil, "Cannot Open file: File not existing"
+        error("Cannot open file: File not existing")
     end
-    local res = {}
-    do
-        local handle = component.invoke(addr, "open", resPath, mode)
-        
-        
-        function res:read(size)
-            checkArg(1, size, "number")
-            return component.invoke(addr, "read", handle, size)
-        end
-
-        function res:write(buf)
-            checkArg(1, buf, "string")
-            coroutine.yield()
-            return component.invoke(addr, "write", handle, buf)
-        end
-
-        function res:seek(_whence, _offset)
-            checkArg(1, _whence, "string")
-            checkArg(2, _offset, "number")
-            return component.invoke(addr, "seek", handle, _whence, _offset)
-        end
-
-        function res:close()
-            return component.invoke(addr, "close", handle)
-        end
-    end
-    return res
+    local handle = component.invoke(addr, "open", resPath, mode)
+    table.insert(handles, {handle = handle, addr = addr})
+    return #handles
 end
 
 api.listDir = function(dir)

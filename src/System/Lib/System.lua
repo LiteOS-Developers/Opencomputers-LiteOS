@@ -25,11 +25,11 @@ system.executeFile = function(path, env)
         local data = ""
         local content
         repeat
-            content = file:read(math.huge)
+            content = fs.read(file, math.huge)
             data = data .. (content or "")
         until not content
-
-        file:close()
+        fs.close(file)
+        
         local l, e = load(data, "=" .. path, "bt", env)
 
         if l == nil or e ~= nil then

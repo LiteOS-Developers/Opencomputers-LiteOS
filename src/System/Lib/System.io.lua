@@ -2,14 +2,14 @@ local api = {}
 local fs = require("Service").getService("filesystem")
 
 api.getFileContent = function(path)
-    file = fs.open(path, "r")
+    local file = fs.open(path, "r")
     local data = ""
     local content
     repeat
-        content = file:read(math.huge)
+        content = fs.read(file, math.huge)
         data = data .. (content or "")
     until not content
-    file:close()
+    fs.close(file)
     return data
 end
 

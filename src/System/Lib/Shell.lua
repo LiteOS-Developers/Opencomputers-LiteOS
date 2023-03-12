@@ -2,33 +2,35 @@ local shell = {}
 local fs = require("Service").getService("filesystem")
 local io = require("System.io")
 local users = require("System.Users")
+
+if _G.activeShells == nil then
+    _G.activeShells = {}
+end
+
 function print(msg, newLine)
     _G.write(msg, newLine)
 end
-function syscall(name, ...)
-    local result = coroutine.yield("syscall", name, ...)
+function syscall(name, args)
+    local result, err = coroutine.yield("syscall", name, args)
     coroutine.yield()
     -- _G.write("syscall(" .. name .. ") -> " .. dump(result))
-    return result
+    if not result and err then
+        err = err .. "\n\n" .. debug.traceback()
+        for _, line in pairs(split(err, "\n")) do
+            _G.write(line)
+        end
+    end
+    return result[1]
 end
 
 shell.getTTY = function(name)
     local d = syscall("getDevice", name)
     if d == nil then
-        -- _G.write("D IS NIL x1")
         return nil
     end
-    if d[1] == nil then
-        -- _G.write("D IS NIL x2")
-        return
-    end
-    d = d[1]
     if d.devicetype == "shell" then
-        -- _G.write("FOUND EXISITING SHELL")
         return d.api
     end
-    -- _G.write("D IS NIL x3: " .. dump(d["devicetype"]))
-
     return nil
 end
 
@@ -87,21 +89,73 @@ local function inTable(t, k)
     return false
 end
 
+local function tableCombine(t, com)
+    local result = {}
+    for k,v in pairs(t) do
+        if inTable(com, k) then
+            result[k] = v
+        end
+    end
+    return result
+end
+
+local function stringJoin(sep, t)
+    local r = ""
+    for item in t do
+        r = r .. sep .. tostring(item)
+    end
+    return r
+end
+
 shell.create = function(pwd, devicename)
     local sh = {
         env={},
         path="",
+        name=nil,
     }
     sh.gpu = _G.devices.gpu
+    
+    local file = syscall("fopen", {"/Config/env", "r"})
+    -- _G.write(dump(file))
+    local data = ""
+    local buf
+    repeat
+        buf = syscall("fdread", {file, math.huge})
+        data = data .. (buf or "")
+    until not buf
+    syscall("fdclose", file)
+    coroutine.yield()
+
+    data = string.gsub(data, "\r", "")
+    lines = split(data, "\n")
+    for i, line in ipairs(lines) do
+        local key = ""
+        local value = ""
+        for i, item in pairs(split(line, "=")) do
+            if i == 1 then
+                key = item
+            else
+                value = value .. item
+            end
+        end
+        -- _G.write(key .. " = " .. value)  
+        sh.env[key] = value
+    end
+    
+    function sh:setenv(name, value) self.env[name] = value end
+    function sh:getenv(env) return self.env[env] end
+    function sh:getAllEnvs() return self.env end
+    function sh:setAllEnvs(envs)
+        self:print(dump(envs))
+        self.env = envs
+    end
+
+    function sh:getGPU()
+        return syscall("getDevice", "gpu")
+    end
 
     function sh:chdir(newpath)
         self.env["PWD"] = newpath
-    end
-    function sh:setenv(name, value)
-        self.env[name] = value
-    end
-    function sh:getGPU()
-        return syscall("getDevice", "gpu")[1]
     end
     function sh:getpwd() 
         local pwd = self.env["PWD"] or "/"
@@ -126,14 +180,13 @@ shell.create = function(pwd, devicename)
     end
 
     function sh:execute(file, args)
-
         checkArg(1, file, "string")
         checkArg(2, args, "table", "nil")
+        args = args or {}
 
         local env = appEnv
         env.shell = self
         env._G = _G
-
         if not fs.isFile(file) then
             return false, "FileNotFound"
         end
@@ -142,11 +195,18 @@ shell.create = function(pwd, devicename)
         if ok == true and err == nil then
             return false, "CommandNotFound"
         elseif self:error(ok, err) then
-            if err.main ~= nil and err.features ~= nil then
-                local allowedFeatures = err.features
+            local features = {}
+
+            if type(err.features) == "table" then
+                local allFeatures = {
+                    ["PARENT_SHELL"] = self 
+                }
+                features = tableCombine(allFeatures, err.features)
+            end
+            if err.main ~= nil then -- and err.features ~= nil
                 -- local args = split(command, " ")
 
-                ok, err = xpcall(err.main, debug.traceback, allowedFeatures, args)
+                ok, err = xpcall(err.main, debug.traceback, features, args)
                 if self:error(ok, err) then
                     return tonumber(err)
                 end
@@ -156,7 +216,6 @@ shell.create = function(pwd, devicename)
         end
     end
 
-    
     function sh:auth(maxAttempts, username)
         iUsername = username
         maxAttempts = maxAttempts or math.huge
@@ -195,7 +254,6 @@ shell.create = function(pwd, devicename)
         return {success=false}
     end
 
-
     function sh:resolvePath(dir) 
         if string.sub(dir, 1, 1) ~= "/" then
             dir = self:getpwd() .. "/" .. dir
@@ -217,7 +275,6 @@ shell.create = function(pwd, devicename)
         return d
     end
 
-    function sh:getenv(env) return self.env[env] end
     
     function sh:print(msg, newLine)
         local lines = split(msg, "\n")
@@ -233,17 +290,17 @@ shell.create = function(pwd, devicename)
         color = color or 0xFFFFFF
         return _G.devices.gpu.setForeground(color, isPalette)
     end
-    function sh:clear()
-        local w,h = syscall("getResolution", self.gpu)
+    -- function sh:clear()
+    --     local w,h = syscall("getResolution", self.gpu)
         
-        success = _G.devices.gpu.fill(0, 0, w, h, " ")
-        if success then
-            _G.screen.x = 1
-            _G.screen.y = 1
-            return true
-        end
-        return false
-    end
+    --     success = _G.devices.gpu.fill(0, 0, w, h, " ")
+    --     if success then
+    --         _G.screen.x = 1
+    --         _G.screen.y = 1
+    --         return true
+    --     end
+    --     return false
+    -- end
     function sh:resolve(name)
         if self.env.PATH == nil then
             return ""
@@ -265,6 +322,7 @@ shell.create = function(pwd, devicename)
         if fs.isFile(pwd .. "/" .. name .. ".lua") then
             return pwd .. "/" .. name .. ".lua"
         end
+
         return nil
     end
     function sh:read(msg)
@@ -300,20 +358,26 @@ shell.create = function(pwd, devicename)
             --write(key)
             ::nothing::
             system.sleep(0.1)
-        end 
-    end
-    function sh:createDevice(devicename)
-        simPrint("Name: " .. dump(syscall("getDevice", devicename)))
-        local condition = devicename ~= nil and syscall("getDevice", devicename).n == 1
-        if condition then
-            syscall("addDevice", {devicename, {devicetype = "shell", api = sh}})
-            return
-
         end
     end
-    -- 
-    -- local x = {syscall, devicename}
-    -- _G.write(dump(syscall("getDevice", devicename) == nil))
+    function sh:createDevice(devicename)
+        local condition = devicename ~= nil and syscall("getDevice", devicename) == nil
+        simPrint("Name: " .. dump(devicename))
+        if condition then   
+            self.name = tostring(devicename)
+            syscall("addDevice", {devicename, {devicetype = "shell", api = self}})
+        else
+            -- _G.write("Not Created")
+        end
+    end
+    function sh:mapToTTY()
+        -- _G.write("mapToTTY: " .. dump(self.name))
+        if type(self.name) ~= "string" then return type(self.name) end
+        local old = shell.getTTY("tty")
+        -- _G.write(self.name)
+        syscall("mapDevice", {self.name, "tty"})
+        return old
+    end
     
     return sh
 end

@@ -26,12 +26,12 @@ api.loadPackage = function(pName)
             local data = ""
             local content
             repeat
-                content = file:read(math.huge)
+                content = fs.read(file, math.huge)
                 if content ~= nil then
                     data = data .. content
                 end
             until not content
-            file:close()
+            fs.close(file)
             
             local l, e = load(data, "=" .. rPath)
             if e ~= nil then

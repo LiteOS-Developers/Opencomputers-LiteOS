@@ -85,7 +85,11 @@ end):start()
 threading.createThread("shell", function()
     local shell = system.executeFile("/System/Lib/Shell.lua").create("/")
     shell:createDevice("tty0")
-    shell:execute("/Bin/shell.lua")
+    shell:mapToTTY()
+    repeat
+        shell:execute("/Bin/shell.lua", {"--shell", "tty0"})
+        coroutine.yield()
+    until false
 end):start()
 
 _G.keys = {}
@@ -112,20 +116,28 @@ local syscalls = service.getService("Syscalls")
 while true do
     for k, v in pairs(threading.threads) do
         if coroutine.status(v.coro) == "dead" then
-            threading.threads[k]:stop() -- stop and remove dead threads and continue
-            _G.write("DEAD: " .. k)
+            threading.threads[k]:stop() -- stop and remove dead threads and then continue
+            -- _G.write("DEAD: " .. k)
             goto continue
         end
         result = table.pack(coroutine.resume(v.coro))
+        -- _G.write("SWAP: " .. dump(result))
         if result[1] == true and result.n >= 3 then
             if result[2] == "syscall" then
                 local call = result[3]
                 local data = result[4] or {}
+            
                 if syscalls[call] ~= nil then
-                    local r = table.pack(syscalls[call](data))
-                    coroutine.resume(v.coro, r)
+                    -- _G.write(dump(table.unpack(data)))
+                    result, err = xpcall(syscalls[call], debug.traceback, data)
+                    if not result then
+                        coroutine.resume(v.coro, nil, err)
+                        goto continue
+                    end
+                    local r = table.pack(err)
+                    coroutine.resume(v.coro, r, err)
                 else
-                    coroutine.resume(v.coro, "Syscall not found")
+                    coroutine.resume(v.coro, nil, "Syscall not found")
                 end
             end
         end

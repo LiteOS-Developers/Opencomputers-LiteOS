@@ -1,4 +1,4 @@
-local fs = service.getService("filesystem")
+local fs = require("filesystem")
 
 local function max(max, v) 
     checkArg(1, max, "number")
@@ -37,8 +37,9 @@ local function formatDate(epochms)
     return string.format("%s-%s-%s %s:%s:%s ", d.year, pad(nod(d.month)), pad(day), hour, min, sec)
 end
 
-return {    
-    main=function(args)
+return {
+    features = {},
+    main=function(granted, args)
         local dir = shell:getpwd()
         if #args >= 2 then
             dir = shell:resolvePath(args[2])
