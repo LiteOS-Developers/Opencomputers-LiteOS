@@ -24,7 +24,7 @@ api.login = function(user, password)
 
         username, hash, home = table.unpack(splitted)
         local hash2 = tohex(_G.devices.data.sha256(password))
-        local result = hash2 == hash
+        local result = hash2 == hash and username == user
         ret = {result=result}
         if result then
             ret.home = home
