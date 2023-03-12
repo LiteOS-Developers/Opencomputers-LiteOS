@@ -1,5 +1,6 @@
 local api = {}
 local shell = require("Shell")
+-- error(dump(shell))
 
 local function parseArgs(args)
     local i = 1

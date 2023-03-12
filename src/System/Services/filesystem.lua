@@ -111,17 +111,19 @@ end
 api.open = function(path, mode)
     checkArg(1, path, "string")
     checkArg(2, mode, "string")
-
+    
     local addr, resPath = getAddrAndPath(path)
     if addr == nil then
         error("No such file or directory: " .. path)
     end
     if not api.isFile(path) then
-        error("Cannot open file: File not existing")
+        -- error(dump(addr))
+        return nil, "Cannot open file: File not existing"
+        
     end
     local handle = component.invoke(addr, "open", resPath, mode)
     table.insert(handles, {handle = handle, addr = addr})
-    return #handles
+    return #handles, nil
 end
 
 api.listDir = function(dir)

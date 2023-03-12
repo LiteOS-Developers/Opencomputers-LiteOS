@@ -24,25 +24,7 @@ api.list = function(filter, exact)
     checkArg(1, filter, "string", "nil")
     checkArg(2, exact, "boolean", "nil")
     exact = exact or false
-    local result = {}
-    -- if exact then
-    -- error(dump(tableMerge(native.list(), api.components)))
-    for k, v in pairs(tableMerge(native.list(), api.components)) do
-        if api.type(k) == filter then -- TODO: add exact ~= true
-            result[k] = api.type(k)
-        end
-    end
-    local i = 0
-    local keys = table.keys(result)
-    -- error(dump(result))
-    setmetatable(result, {
-        __call = function()
-            i = i + 1
-            -- error(keys[i])
-            return keys[i]
-        end
-    })
-    return result
+    return native.list(filter, exact)
 end
 
 api.proxy = function(addr)
@@ -59,9 +41,8 @@ api.type = function(addr)
     return native.type(addr) 
 end
 
-api.register = function(addr, name, type_, calls)
+api.register = function(addr, type_, calls)
     api.components[addr] = {
-        name=name,
         type_=type,
         api=calls
     }

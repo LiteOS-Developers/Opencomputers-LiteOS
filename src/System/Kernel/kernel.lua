@@ -4,7 +4,7 @@ _G.VERSION_INFO.minor = 1
 _G.VERSION_INFO.micro = 0
 _G.VERSION_INFO.release = "dev"
 
-_G.devices = {}
+-- _G.devices = {}
 _G.screen = { y = 1, x = 1 }
 
 
@@ -27,41 +27,52 @@ end
 _G.service = _G.lib.loadfile("/System/Lib/Service.lua")()
 _G.system = _G.lib.loadfile("/System/Lib/System.lua")()
 
-_G.write("Loading components...")
+_G.write("Preparing components...")
 _G.component = _G.lib.loadfile("/System/Kernel/components.lua")()
 
 local fs = service.getService("filesystem")
+-- local devfs = service.getService("devfs")
 
+
+_G.write("Prepared components")
+
+_G.write("Initalizing System Services...")
+
+_G.write("  - Filesystem")
+local filesystem = _G.service.getService("filesystem")
+--
+
+_G.write("  - Device management")
+local devfs = _G.service.getService("devfs")
+_G.devices = devfs.create()
+component.register(_G.devices.addr, "devfs", _G.devices)
+
+--
+
+_G.write("Mouting filesystems...")
+
+local drive0 = computer.getBootAddress()
+_G.devices.register("drive0", component.proxy(drive0))
+filesystem.mount(computer.getBootAddress(), "/")
+filesystem.mount(_G.devices.addr, "/dev")
+
+local driveId = 1
+for addr, type in pairs(component.list("filesystem")) do
+    if not addr == drive0 then
+        _G.devices["drive"..tostring(driveId)] = component.proxy(addr)
+        _G.devices.register("drive"..tostring(driveId), component.proxy(addr))
+        driveId = driveId + 1
+    end
+   --filesystem.mount(addr, "/Mount/" .. addr)
+end
+
+_G.write("Loading components...")
 datacard = component.list("data")()
 if datacard == nil then
     error("No DataCard Avaiable!")
 end
 _G.devices.data = component.proxy(datacard)
-
-
-
 _G.write("Loaded components")
-
-_G.write("Initalizing System Services...")
-
-
-_G.write("  - Loading Filesystem Service...")
-local filesystem = _G.service.getService("filesystem")
-_G.write("  - Loaded Filesystem Service")
-
-_G.write("Mouting filesystems...")
-
-local drive0 = computer.getBootAddress()
-_G.devices.drive0 = component.proxy(drive0)
-filesystem.mount(computer.getBootAddress(), "/")
-local driveId = 1
-for addr, type in pairs(component.list("filesystem")) do
-    if not addr == drive0 then
-        _G.devices["drive"..tostring(driveId)] = component.proxy(addr)
-        driveId = driveId + 1
-    end
-   --filesystem.mount(addr, "/Mount/" .. addr)
-end
     
 
 _G.write("Mouted filesystems...")
@@ -93,9 +104,12 @@ threading.createThread("shell", function()
     shell:createDevice("tty0")
     shell:mapToTTY()
     repeat
-        shell:execute("/Bin/shell.lua", {"--shell", "tty0"})
+        local result, err = pcall(shell.execute, shell, "/Bin/shell.lua", {"--shell", "tty0"})
+        if not result and err then
+            _G.write(err)
+        end
         coroutine.yield()
-    until false
+    until result
 end):start()
 
 _G.keys = {}

@@ -85,13 +85,13 @@ end
 function _G.write(msg, newLine)
     msg = msg == nil and "" or msg
     newLine = newLine == nil and true or newLine
-    if _G.devices.gpu then
-        local sw, sh = _G.devices.gpu.getResolution() 
+    if _G.screen.gpu then
+        local sw, sh = _G.screen.gpu.getResolution() 
 
-        _G.devices.gpu.set(_G.screen.x, _G.screen.y, msg)
+        _G.screen.gpu.set(_G.screen.x, _G.screen.y, msg)
         if _G.screen.y == sh and newLine == true then
-            _G.devices.gpu.copy(1, 2, sw, sh - 1, 0, -1)
-            _G.devices.gpu.fill(1, sh, sw, 1, " ")
+            _G.screen.gpu.copy(1, 2, sw, sh - 1, 0, -1)
+            _G.screen.gpu.fill(1, sh, sw, 1, " ")
         else
             if newLine then
                 _G.screen.y = _G.screen.y + 1
