@@ -15,8 +15,32 @@ _G.lib.loadfile("/System/Kernel/prepare.lua")()
 f, e = _G.lib.loadfile("/System/Kernel/stdlib.lua")()
 
 _G.write("Booting...")
+
+_G.table.keys = function(table)
+    local r = {}
+    for k, v in pairs(table) do
+        _G.table.insert(r, k)
+    end
+    return r
+end
+
 _G.service = _G.lib.loadfile("/System/Lib/Service.lua")()
 _G.system = _G.lib.loadfile("/System/Lib/System.lua")()
+
+_G.write("Loading components...")
+_G.component = _G.lib.loadfile("/System/Kernel/components.lua")()
+
+local fs = service.getService("filesystem")
+
+datacard = component.list("data")()
+if datacard == nil then
+    error("No DataCard Avaiable!")
+end
+_G.devices.data = component.proxy(datacard)
+
+
+
+_G.write("Loaded components")
 
 _G.write("Initalizing System Services...")
 
@@ -53,25 +77,7 @@ _G.threading = system.executeFile("/System/Kernel/threading.lua")
 
 local event = require("Event")
 _G.write("Loaded Libraries")
-_G.write("Loading components...")
 
-local fs = service.getService("filesystem")
-
-datacard = component.list("data")()
-if datacard == nil then
-    error("No DataCard Avaiable!")
-end
-_G.devices.data = component.proxy(datacard)
-
-_G.table.keys = function(table)
-    local r = {}
-    for k, v in pairs(table) do
-        _G.table.insert(r, k)
-    end
-    return r
-end
-
-_G.write("Loaded components")
 _G.write("Running CoreOS v" .. _G.VERSION_INFO.major .. "." .. _G.VERSION_INFO.minor .. "." .. _G.VERSION_INFO.micro .. "-".. _G.VERSION_INFO.release)
 
 -- hold computers alive 

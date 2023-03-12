@@ -10,7 +10,7 @@ local function tableMerge(t1, t2)
 end
 
 api.invoke = function(addr, method, ...)
-    checkArg(1, address, "string")
+    checkArg(1, addr, "string")
     checkArg(2, method, "string")
     if api.components[addr] ~= nil then
         if api.components[addr].api[method] ~= nil then
@@ -23,29 +23,37 @@ end
 api.list = function(filter, exact)
     checkArg(1, filter, "string", "nil")
     checkArg(2, exact, "boolean", "nil")
+    exact = exact or false
     local result = {}
     -- if exact then
-    for k, j in pairs(tableMerge(native.list(), api.components)) do
-        if (api.type(k) == filter and exact) or string.sub(api.type(k), 1, #exact) == exact then
+    -- error(dump(tableMerge(native.list(), api.components)))
+    for k, v in pairs(tableMerge(native.list(), api.components)) do
+        if api.type(k) == filter then -- TODO: add exact ~= true
             result[k] = api.type(k)
         end
     end
     local i = 0
-    return function()
-        i = i + 1
-        return result[i]
-    end
+    local keys = table.keys(result)
+    -- error(dump(result))
+    setmetatable(result, {
+        __call = function()
+            i = i + 1
+            -- error(keys[i])
+            return keys[i]
+        end
+    })
+    return result
 end
 
 api.proxy = function(addr)
-    if inTable(addr, api.components) then
+    if inTable(api.components, addr ) then
         return api.components[addr].api
     end
     return native.proxy(addr) 
 end
 
 api.type = function(addr)
-    if inTable(addr, api.components) then
+    if inTable(api.components, addr) then
         return api.components[addr].type_
     end
     return native.type(addr) 
@@ -62,3 +70,5 @@ end
 api.isVirtual = function(addr)
     return api.components[addr] ~= nil
 end
+
+return api
