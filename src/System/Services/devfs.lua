@@ -68,12 +68,13 @@ devfs.create = function()
     proxy.register = function(name, api)
         checkArg(1, name, "string")
         checkArg(2, api, "table")
-        _G.write("REGISTER: " .. name)
         proxy.devices[name] = api
     end
+
     proxy.ioctl = function(handle, method, ...)
         checkArg(1, handle, "number")
         checkArg(2, method, "string")
+
         return proxy.devices[proxy.handles[handle].device][method](...)
     end
     proxy.getAPI = function(handle)
