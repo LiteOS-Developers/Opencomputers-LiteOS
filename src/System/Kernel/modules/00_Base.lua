@@ -29,8 +29,49 @@ if computer.getArchitecture() ~= "Lua 5.3" then
 end
 _G.lib.loadfile("/System/Kernel/stdlib.lua")()
 
+function _G.k.write(msg, newLine)
+    msg = msg == nil and "" or msg
+    newLine = newLine == nil and true or newLine
+    if k.devices.gpu then
+        local sw, sh = k.devices.gpu.getResolution() 
+
+        k.devices.gpu.set(k.screen.x, k.screen.y, msg)
+        if k.screen.y == sh and newLine == true then
+            k.devices.gpu.copy(1, 2, sw, sh - 1, 0, -1)
+            k.devices.gpu.fill(1, sh, sw, 1, " ")
+        else
+            if newLine then
+                k.screen.y = k.screen.y + 1
+            end
+        end
+        if newLine then
+            k.screen.x = 1
+        else
+            k.screen.x = k.screen.x + string.len(msg)
+        end
+    end
+end
+
+function k.printk(level, fmt, ...)
+    local message = string.format("[%08.02f] %s: ", computer.uptime(),
+        reverse[level]) .. string.format(fmt, ...)
+
+    if level <= k.cmdline.loglevel then
+        k.write(message)
+    end
+
+    -- log_to_buffer(message)
+  end
+
 k.panic = function(e)
-    k.devices.gpu.setForeground(0x990000)
-    k.write(e)
-    k.devices.gpu.setForeground(0xFFFFFF)
+    k.printk(k.L_EMERG, "#### stack traceback ####")
+
+    for line in debug.traceback():gmatch("[^\n]+") do
+        if line ~= "stack traceback:" then
+            k.printk(k.L_EMERG, "%s", line)
+        end
+    end
+
+    k.printk(k.L_EMERG, "#### end traceback ####")
+    k.printk(k.L_EMERG, "kernel panic - not syncing: %s", reason)
 end

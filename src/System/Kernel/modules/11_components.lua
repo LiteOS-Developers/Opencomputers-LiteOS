@@ -6,7 +6,8 @@ datacard = component.list("data")()
 if datacard == nil then
     error("No DataCard Avaiable!")
 end
-k.devices.data = component.proxy(datacard)
+
+k.devices.register("data", component.proxy(datacard))
 
 _G.table.keys = function(table)
     local r = {}
@@ -15,4 +16,8 @@ _G.table.keys = function(table)
     end
     return r
 end
+
+_G.component = k.system.executeFile("/System/Kernel/components.lua")
+
+component.register(k.devices.addr, "devfs", k.devices)
 k.write("Loaded components")

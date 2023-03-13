@@ -1,11 +1,11 @@
 k.write("Loading Libraries...")
 
-_G.package = k.system.executeFile("/System/Lib/Package.lua")
-package.addLibraryPath("/System/Lib/?.lua")
-package.addLibraryPath("/System/Lib/?/init.lua")
-_G.require = package.require
-_G.threading = k.system.executeFile("/System/Kernel/threading.lua")
+k.package = k.system.executeFile("/System/Lib/Package.lua")
+k.package.addLibraryPath("/System/Lib/?.lua")
+k.package.addLibraryPath("/System/Lib/?/init.lua")
+_G.require = k.package.require
+k.threading = k.system.executeFile("/System/Kernel/threading.lua")
 
-_G.event = require("Event")
+k.event = require("Event")
 
 k.write("Loaded Libraries")

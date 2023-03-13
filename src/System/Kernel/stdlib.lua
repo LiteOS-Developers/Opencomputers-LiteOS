@@ -82,30 +82,8 @@ function _G.rmFloat(n)
     return tostring(string.format("%.0f", n))
 end
 
-function _G.k.write(msg, newLine)
-    msg = msg == nil and "" or msg
-    newLine = newLine == nil and true or newLine
-    if k.devices.gpu then
-        local sw, sh = k.devices.gpu.getResolution() 
-
-        k.devices.gpu.set(k.screen.x, k.screen.y, msg)
-        if k.screen.y == sh and newLine == true then
-            k.devices.gpu.copy(1, 2, sw, sh - 1, 0, -1)
-            k.devices.gpu.fill(1, sh, sw, 1, " ")
-        else
-            if newLine then
-                k.screen.y = k.screen.y + 1
-            end
-        end
-        if newLine then
-            k.screen.x = 1
-        else
-            k.screen.x = k.screen.x + string.len(msg)
-        end
-    end
+_G.write = function(...)
+    error("Called deprecated _G.write")
 end
-
-_G.write = _G.k.write
-
 
 return _G

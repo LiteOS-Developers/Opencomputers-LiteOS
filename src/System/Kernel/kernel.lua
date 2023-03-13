@@ -18,38 +18,39 @@ end
 
 k.write("Running CoreOS v" .. _G.VERSION_INFO.major .. "." .. _G.VERSION_INFO.minor .. "." .. _G.VERSION_INFO.micro .. "-".. _G.VERSION_INFO.release)
 
-threading.createThread("ProcessDeamon", function()
+k.threading.createThread("ProcessDeamon", function()
     while true do
         coroutine.yield()
     end
 end):start()
 
-threading.createThread("shell", function()
-    --[[local shell = k.system.executeFile("/System/Lib/Shell.lua").create("/")
-    shell:createDevice("tty0")
+-- k.threading.createThread("shell", function()
+    local shell = k.system.executeFile("/System/Lib/Shell.lua").create("/")
+    --[[shell:createDevice("tty0")
     shell:mapToTTY()
     repeat
         shell:execute("/Bin/shell.lua", {"--shell", "tty0"})
         coroutine.yield()
     until false]]
-    k.write("OS Running")
-end):start()
+    -- k.write("OS Running")
+-- end):start()
 
-
-
-    
+-- error(dump(k.threading.threads))
 -- thread management (look in /System/Kernel/threading.lua)
 while true do
-    for k, v in pairs(threading.threads) do
+    for thread, v in pairs(k.threading.threads) do
         if coroutine.status(v.coro) == "dead" then
-            threading.threads[k]:stop()
+            -- if k.threading == nil then error(k) end
+            k.threading.threads[thread]:stop()
             -- _G.write("DEAD: " .. k)
             goto continue
         end
         result = table.pack(coroutine.resume(v.coro))
         if result[1] == true and result.n >= 3 then
             if result[2] == "syscall" then
-                
+                local call = result[3]
+                local data = result[4] or {}
+                coroutine.resume(v.coro, table.unpack(k.processSyscall(call, data)))
             end
         end
         ::continue::
