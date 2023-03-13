@@ -86,10 +86,10 @@ function _G.write(msg, newLine)
     msg = msg == nil and "" or msg
     newLine = newLine == nil and true or newLine
     if k.devices.gpu then
-        local sw, sh = _G.screen.gpu.getResolution() 
+        local sw, sh = k.devices.gpu.getResolution() 
 
-        _G.screen.gpu.set(k.screen.x, k.screen.y, msg)
-        if k.devices.y == sh and newLine == true then
+        k.devices.gpu.set(k.screen.x, k.screen.y, msg)
+        if k.screen.y == sh and newLine == true then
             k.devices.gpu.copy(1, 2, sw, sh - 1, 0, -1)
             k.devices.gpu.fill(1, sh, sw, 1, " ")
         else
