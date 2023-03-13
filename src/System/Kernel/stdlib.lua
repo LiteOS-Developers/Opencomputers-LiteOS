@@ -85,22 +85,22 @@ end
 function _G.write(msg, newLine)
     msg = msg == nil and "" or msg
     newLine = newLine == nil and true or newLine
-    if _G.screen.gpu then
+    if k.devices.gpu then
         local sw, sh = _G.screen.gpu.getResolution() 
 
-        _G.screen.gpu.set(_G.screen.x, _G.screen.y, msg)
-        if _G.screen.y == sh and newLine == true then
-            _G.screen.gpu.copy(1, 2, sw, sh - 1, 0, -1)
-            _G.screen.gpu.fill(1, sh, sw, 1, " ")
+        _G.screen.gpu.set(k.screen.x, k.screen.y, msg)
+        if k.devices.y == sh and newLine == true then
+            k.devices.gpu.copy(1, 2, sw, sh - 1, 0, -1)
+            k.devices.gpu.fill(1, sh, sw, 1, " ")
         else
             if newLine then
-                _G.screen.y = _G.screen.y + 1
+                k.screen.y = k.screen.y + 1
             end
         end
         if newLine then
-            _G.screen.x = 1
+            k.screen.x = 1
         else
-            _G.screen.x = _G.screen.x + string.len(msg)
+            k.screen.x = k.screen.x + string.len(msg)
         end
     end
 end
