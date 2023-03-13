@@ -35,7 +35,6 @@ api.fdclose = function(handle)
     return fs.close(handle)
 end
 
-
 api.fListDir = function(dir)
     return table.pack(fs.listDir(dir))
 end
@@ -48,24 +47,25 @@ end
 
 api.getDevice = function(name)
     -- _G.write("getDevice(" .. name .. "): " .. dump(_G.devices[name]))
-    return _G.devices[name]
+    local handle, err = fs.open("/dev/" .. name, "r")
+    if handle == nil then return {} end
+    return _G.devices.getAPI(handle)
 end
 api.addDevice = function(args)
-    _G.devices[args[1]] = args[2]
-    return _G.devices[args[1]] ~= nil
+    _G.devices.register(args[1], args[2])
 end
 api.mapDevice = function(args)
     -- _G.write(dump(args))
     checkArg(1, args[1], "string")
     checkArg(2, args[2], "string")
     
-    _G.devices[args[2]] = _G.devices[args[1]]
+    _G.devices.register(args[2], _G.devices[args[1]])
     -- _G.write(dump(_G.devices[args[2]]))
 end
 api.filterDevices = function(name)
     local length = string.len(name)
     local result = {}
-    for i, n in pairs(table.keys(_G.devices)) do
+    for i, n in pairs(table.keys(_G.devices.devices)) do
         if n:sub(1, length) == name then
             table.insert(result, n)
         end

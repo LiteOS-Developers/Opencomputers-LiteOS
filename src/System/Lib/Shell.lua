@@ -1,5 +1,5 @@
 local shell = {}
-local fs = require("Service").getService("filesystem")
+local fs = service.getService("filesystem")
 local io = require("System.io")
 local users = require("System.Users")
 
@@ -113,7 +113,7 @@ shell.create = function(pwd, devicename)
         path="",
         name=nil,
     }
-    sh.gpu = _G.devices.gpu
+    sh.gpu = _G.screen.gpu
     
     local file = syscall("fopen", {"/Config/env", "r"})
     -- _G.write(dump(file))
@@ -288,7 +288,7 @@ shell.create = function(pwd, devicename)
     end
     function sh:setFore(color, isPalette)
         color = color or 0xFFFFFF
-        return _G.devices.gpu.setForeground(color, isPalette)
+        return _G.screen.gpu.setForeground(color, isPalette)
     end
     -- function sh:clear()
     --     local w,h = syscall("getResolution", self.gpu)
@@ -335,7 +335,7 @@ shell.create = function(pwd, devicename)
             key = getKey()
             if key == "BACKSPACE" and _G.screen.x - string.len(msg) >= 1 then
                 _G.screen.x = _G.screen.x - 1
-                _G.devices.gpu.fill(0, _G.screen.y, _G.screen.w, 1, " ")
+                _G.screen.gpu.fill(0, _G.screen.y, _G.screen.w, 1, " ")
                 value = string.sub(value, 0, -2)
                 _G.screen.x = 1
                 print(msg .. value, false)

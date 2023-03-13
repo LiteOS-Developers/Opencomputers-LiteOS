@@ -1,5 +1,7 @@
+local uuid = require("uuid")
 return {
     main=function(args)
-        shell:print(dump(syscall("test")))
+        shell:print(uuid.next())
+        shell:print(uuid.next())
     end
 }

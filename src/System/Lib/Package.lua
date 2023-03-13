@@ -23,6 +23,7 @@ api.loadPackage = function(pName)
         local rPath = v:gsub("?", pName)
         if fs.isFile(rPath) then
             local file = fs.open(rPath, "r")
+            _G.write(dump(file))
             local data = ""
             local content
             repeat
@@ -32,7 +33,7 @@ api.loadPackage = function(pName)
                 end
             until not content
             fs.close(file)
-            
+            -- error(data)
             local l, e = load(data, "=" .. rPath)
             if e ~= nil then
                 _G.error(e .. "\n" .. debug.traceback())
