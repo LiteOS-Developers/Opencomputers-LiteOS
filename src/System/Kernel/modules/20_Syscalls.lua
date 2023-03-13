@@ -1,8 +1,7 @@
-_G.k.syscalls = k.service.getService("Syscalls")
+k.syscalls = k.service.getService("Syscalls")
 
-function _G.k.processSyscall(call, args)
-    local call = result[3]
-    local data = result[4] or {}
+function k.processSyscall(call, args)
+    
 
     if syscalls[call] ~= nil then
         -- _G.write(dump(table.unpack(data)))
