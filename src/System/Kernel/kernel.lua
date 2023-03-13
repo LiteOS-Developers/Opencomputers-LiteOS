@@ -7,8 +7,6 @@ _G.VERSION_INFO.release = "dev"
 
 k = {screen={}}
 
--- _G.lib.loadfile("/System/Kernel/modules/00_Base.lua")()
-
 
 for _,file in ipairs(component.invoke(computer.getBootAddress(), "list", "/System/Kernel/modules")) do
     local module, err = _G.lib.loadfile("/System/Kernel/modules/" .. file)
@@ -44,12 +42,11 @@ end):start()
 while true do
     for k, v in pairs(threading.threads) do
         if coroutine.status(v.coro) == "dead" then
-            threading.threads[k]:stop() -- stop and remove dead threads and then continue
+            threading.threads[k]:stop()
             -- _G.write("DEAD: " .. k)
             goto continue
         end
         result = table.pack(coroutine.resume(v.coro))
-        -- _G.write("SWAP: " .. dump(result))
         if result[1] == true and result.n >= 3 then
             if result[2] == "syscall" then
                 
