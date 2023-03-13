@@ -1,5 +1,5 @@
 local api = {}
-local fs = require("Service").getService("filesystem")
+local fs = k.service.getService("filesystem")
 
 api.shutdown = function(...)
     computer.shutdown(false)

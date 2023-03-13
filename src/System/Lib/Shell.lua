@@ -190,7 +190,7 @@ shell.create = function(pwd, devicename)
         if not fs.isFile(file) then
             return false, "FileNotFound"
         end
-        ok, err = xpcall(system.executeFile, debug.traceback, file, env)
+        ok, err = xpcall(k.system.executeFile, debug.traceback, file, env)
         
         if ok == true and err == nil then
             return false, "CommandNotFound"
@@ -225,12 +225,12 @@ shell.create = function(pwd, devicename)
             if username == nil then
                 username = self:read("Username> ")
             end
-            system.sleep(0.02)
+            k.system.sleep(0.02)
 
             hostname = io.getFileContent("/Config/hostname")
             password = self:read(username .. "@" .. hostname .. "'s Password> ")
             local result = users.login(username, password)
-            system.sleep(0.02)
+            k.system.sleep(0.02)
             if result.result == true then
                 return {
                     success=true,
@@ -357,7 +357,7 @@ shell.create = function(pwd, devicename)
             end
             --write(key)
             ::nothing::
-            system.sleep(0.1)
+            k.system.sleep(0.1)
         end
     end
     function sh:createDevice(devicename)

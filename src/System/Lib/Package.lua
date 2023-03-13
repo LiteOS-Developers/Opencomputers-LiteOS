@@ -3,7 +3,7 @@ local api = {}
 _G.packages = {}
 local searchPaths = {}
 
-local fs = _G.service.getService("filesystem")
+local fs = _G.k.service.getService("filesystem")
 
 api.loadPackage = function(pName)
     checkArg(1, pName, "string")

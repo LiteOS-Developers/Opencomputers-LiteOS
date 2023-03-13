@@ -1,6 +1,6 @@
 local system = {}
 
-local fs = _G.service.getService("filesystem")
+local fs = _G.k.service.getService("filesystem")
 
 system.sleep = function(timeout)
     local deadline = computer.uptime() + (timeout or 0)

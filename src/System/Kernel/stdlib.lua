@@ -54,14 +54,14 @@ function _G.getKey()
 
         if i == 0 and code == 29 then return "STRG"
         elseif i == 0 and code == 157 then return "RSTRG"
-        elseif i == 0 and code == 42 or i == 0 and code == 54 then
-            if #_G.keys >= 2 then
-                local char, code = _G.keys[2].char, _G.keys[2].code
+        --[[elseif i == 0 and code == 42 or i == 0 and code == 54 then
+            if #k.keys >= 2 then
+                local char, code = k.keys[2].char, k.keys[2].code
                 local id = tostring(string.format("%.0f", char))
                 local i = tonumber(id)
                 local code = tonumber(string.format("%.0f", code))
                 return getValueFromKey(keyCode, id .. "." .. code)
-            end
+            end--]]
         elseif i == 0 and code == 56 then return "ALT"
         elseif i == 0 and code == 58 then return "CAPSLOCK"
         elseif i == 0 and code == 219 then return "SUPER"
@@ -73,7 +73,7 @@ function _G.getKey()
             return k
         end
         
-        system.sleep(0.1)
+        k.system.sleep(0.1)
     end
     return "<INVALID-KEY>"
 end
@@ -82,28 +82,30 @@ function _G.rmFloat(n)
     return tostring(string.format("%.0f", n))
 end
 
-function _G.write(msg, newLine)
+function _G.k.write(msg, newLine)
     msg = msg == nil and "" or msg
     newLine = newLine == nil and true or newLine
-    if _G.devices.gpu then
-        local sw, sh = _G.devices.gpu.getResolution() 
+    if k.devices.gpu then
+        local sw, sh = k.devices.gpu.getResolution() 
 
-        _G.devices.gpu.set(_G.screen.x, _G.screen.y, msg)
-        if _G.screen.y == sh and newLine == true then
-            _G.devices.gpu.copy(1, 2, sw, sh - 1, 0, -1)
-            _G.devices.gpu.fill(1, sh, sw, 1, " ")
+        k.devices.gpu.set(k.screen.x, k.screen.y, msg)
+        if k.screen.y == sh and newLine == true then
+            k.devices.gpu.copy(1, 2, sw, sh - 1, 0, -1)
+            k.devices.gpu.fill(1, sh, sw, 1, " ")
         else
             if newLine then
-                _G.screen.y = _G.screen.y + 1
+                k.screen.y = k.screen.y + 1
             end
         end
         if newLine then
-            _G.screen.x = 1
+            k.screen.x = 1
         else
-            _G.screen.x = _G.screen.x + string.len(msg)
+            k.screen.x = k.screen.x + string.len(msg)
         end
     end
 end
+
+_G.write = _G.k.write
 
 
 return _G
