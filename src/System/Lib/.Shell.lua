@@ -274,7 +274,6 @@ shell.create = function(pwd, devicename)
         end
         return d
     end
-
     
     function sh:print(msg, newLine)
         local lines = split(msg, "\n")
