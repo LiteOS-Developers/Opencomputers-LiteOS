@@ -13,6 +13,15 @@ function _G.dump(o)
     end
 end
 
+_G.table.keys = function(t)
+    checkArg(1, t, "table")
+    local r = {}
+    for k, v in pairs(t) do
+        _G.table.insert(r, k)
+    end
+    return r
+end
+
 _G.split = function(inputstr, sep)
     if sep == nil then
         sep = "%s"
@@ -83,7 +92,6 @@ function _G.rmFloat(n)
 end
 
 _G.write = function(...)
-    error("Called deprecated _G.write")
+    error("Called deprecated _G.write: \n" .. debug.traceback())
 end
-
 return _G
