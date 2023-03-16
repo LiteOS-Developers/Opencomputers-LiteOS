@@ -1,11 +1,12 @@
-k.syscalls = k.service.getService("Syscalls")
+k.syscalls, err = k.service.getService("Syscalls")
+if not k.syscalls then
+    error(dump(err))
+end
 
 function k.processSyscall(call, args)
-    
-
-    if syscalls[call] ~= nil then
-        -- _G.write(dump(table.unpack(data)))
-        result, err = xpcall(syscalls[call], debug.traceback, data)
+    if k.syscalls[call] ~= nil then
+        
+        result, err = xpcall(function() return k.syscalls[call](table.unpack(args)) end, debug.traceback)
         if not result then
             -- coroutine.resume(v.coro, nil, err)
             return nil, err

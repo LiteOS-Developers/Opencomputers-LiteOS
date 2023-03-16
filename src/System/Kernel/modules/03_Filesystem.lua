@@ -2,10 +2,12 @@ k.write("Mouting filesystems...")
 
 local drive0 = computer.getBootAddress()
 k.devices.drive0 = component.proxy(drive0)
+
 k.filesystem.mount(computer.getBootAddress(), "/")
 k.filesystem.mount(k.devices.addr, "/dev")
 
 local driveId = 1
+
 for addr, type in pairs(component.list("filesystem")) do
     if not addr == drive0 then
         k.devices["drive"..tostring(driveId)] = component.proxy(addr)
@@ -15,4 +17,4 @@ for addr, type in pairs(component.list("filesystem")) do
     --filesystem.mount(addr, "/Mount/" .. addr)
 end
 
-    k.write("Mouted filesystems...")
+k.write("Mouted filesystems...")

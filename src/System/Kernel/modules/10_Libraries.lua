@@ -7,5 +7,6 @@ _G.require = k.package.require
 k.threading = k.system.executeFile("/System/Kernel/threading.lua")
 
 k.event = require("Event")
+-- error(k.event)
 
 k.write("Loaded Libraries")

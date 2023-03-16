@@ -51,6 +51,23 @@ function _G.k.write(msg, newLine)
         end
     end
 end
+k.L_EMERG   = 0
+k.L_ALERT   = 1
+k.L_CRIT    = 2
+k.L_ERROR   = 3
+k.L_WARNING = 4
+k.L_NOTICE  = 5
+k.L_INFO    = 6
+k.L_DEBUG   = 7
+k.cmdline = {}
+k.cmdline.loglevel = tonumber(k.cmdline.loglevel) or 8
+
+local reverse = {}
+for name,v in pairs(k) do
+    if name:sub(1,2) == "L_" then
+        reverse[v] = name:sub(3)
+    end
+end
 
 function k.printk(level, fmt, ...)
     local message = string.format("[%08.02f] %s: ", computer.uptime(),
@@ -64,9 +81,10 @@ function k.printk(level, fmt, ...)
   end
 
 k.panic = function(e)
+
     k.printk(k.L_EMERG, "#### stack traceback ####")
 
-    for line in debug.traceback():gmatch("[^\n]+") do
+    for line in e:gsub("\t", "    "):gmatch("[^\n]+") do
         if line ~= "stack traceback:" then
             k.printk(k.L_EMERG, "%s", line)
         end
@@ -74,4 +92,5 @@ k.panic = function(e)
 
     k.printk(k.L_EMERG, "#### end traceback ####")
     k.printk(k.L_EMERG, "kernel panic - not syncing: %s", reason)
+    while true do coroutine.yield() end
 end
