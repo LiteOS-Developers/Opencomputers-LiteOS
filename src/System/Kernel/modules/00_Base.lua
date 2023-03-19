@@ -70,6 +70,7 @@ for name,v in pairs(k) do
 end
 
 function k.printk(level, fmt, ...)
+    checkArg(1, level, "number")
     local message = string.format("[%08.02f] %s: ", computer.uptime(),
         reverse[level]) .. string.format(fmt, ...)
 
@@ -78,7 +79,16 @@ function k.printk(level, fmt, ...)
     end
 
     -- log_to_buffer(message)
-  end
+end
+
+function k.scall(func, ...)
+    checkArg(1, func, "function")
+    local c = coroutine.create(func)
+    local result = table.pack(coroutine.resume(c, ...))
+    local ok = result[1]
+    table.remove(result, 1)
+    return ok, result[1]
+end
 
 k.panic = function(e)
 
@@ -91,6 +101,6 @@ k.panic = function(e)
     end
 
     k.printk(k.L_EMERG, "#### end traceback ####")
-    k.printk(k.L_EMERG, "kernel panic - not syncing: %s", reason)
+    k.printk(k.L_EMERG, "kernel panic - not syncing")
     while true do coroutine.yield() end
 end

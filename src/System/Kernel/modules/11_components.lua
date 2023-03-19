@@ -1,4 +1,4 @@
-k.write("Loading components...")
+k.printk(k.L_INFO,"Loading components...")
 
 local fs = k.service.getService("filesystem")
 
@@ -8,9 +8,9 @@ if datacard == nil then
 end
 
 k.devices.register("data", component.proxy(datacard))
-k.devices.register("events", k.event)
+-- k.devices.register("events", k.event)
 
 
 
 component.register(k.devices.addr, "devfs", k.devices)
-k.write("Loaded components")
+k.printk(k.L_INFO, "Loaded components")
