@@ -1,64 +1,105 @@
 local api = {}
 
-local function deepcopy(orig, copies)
+function deepcopy(orig, copies)
     copies = copies or {}
     local orig_type = type(orig)
-    local copy
-
+    local copy, t
     if orig_type == 'table' then
         if copies[orig] then
             copy = copies[orig]
-
         else
             copy = {}
             copies[orig] = copy
-
             for orig_key, orig_value in next, orig, nil do
                 copy[deepcopy(orig_key, copies)] = deepcopy(orig_value, copies)
             end
-            setmetatable(copy, deepcopy(getmetatable(orig), copies))
+            t = deepcopy(getmetatable(orig), copies)
+            if type(t) == "table" or type(t) == "nil" then
+                setmetatable(copy, t)
+            end
         end
-
     else -- number, string, boolean, etc
         copy = orig
     end
-
     return copy
 end
 
+local builtins = {}
+
+builtins.syscall = function(call, ...)
+    local result = table.pack(coroutine.yield("syscall", call, ...))
+    
+    if result[1] ~= "syscall" then
+        k.write(err)
+    end
+    table.remove(result, 1)
+    coroutine.yield()
+    return table.unpack(result)
+end
+
+builtins.ioctl = function(handle, func, ...)
+    local v = table.pack(builtins.syscall("ioctl", handle, func, ...))
+    if type(v) ~= "table" then
+        return v
+    end
+    return table.unpack(v)
+end
+
+local function copyBlacklist(t, list)
+    local new = deepcopy(t)
+    for key in pairs(list) do new[key] = nil end
+    return new
+end
+
+
 local blacklist = {
-    component = true, computer = true, devices=true, service=true,
-  }
+    component = true, computer = true, k = true, sName=true
+}
 
 api.create_env = function(base)
     checkArg(1, base, "table", "nil")
 
-    local new = deepcopy(base or _G)
-    for key in pairs(blacklist) do new[key] = nil end
-
+    local new = copyBlacklist(base or _G, blacklist)
+    
     new.load = function(a, b, c, d)
-        return k.load(a, b, c, d or k.current_process().env)
+        return k.load(a, b, c, d or {}) -- k.current_process().env
     end
+    new.error = k.write
+    new.package = require("Package")
+    new.require = new.package.require
+    local filesystem = k.filesystem
+    
+    new.filesystem = {
+        open = filesystem.open,
+        read = filesystem.read,
+        write = filesystem.write,
+        seek = filesystem.seek,
+        close = filesystem.close,
+        listDir = filesystem.listDir,
+        getFilesize = filesystem.getFilesize,
+        getLastEdit = filesystem.getLastEdit,
+        ensureOpen = filesystem.ensureOpen,
+    }
 
-    local yield = new.coroutine.yield
-    new.coroutine.yield = function(request, ...)
-        local proc = k.current_process()
-        local last_yield = proc.last_yield or computer.uptime()
+    new.scall = k.scall
 
-        if request == "syscall" then
-            if computer.uptime() - last_yield > 3 then
-                coroutine.yield(k.sysyield_string)
-                proc.last_yield = computer.uptime()
-            end
+    new.print = k.write
 
-            return k.perform_system_call(...)
-        end
-
-        proc.last_yield = computer.uptime()
-        return yield(request, ...)
+    -- new.coroutine.yield = coroutine.yield
+    
+    --[[new.syscall = function(call, ...)
+        local result, err = new.coroutine.yield("syscall", call, ...)
+        new.print(dump(result))
+        new.print(dump(err))
+        return result
     end
+    new.ioctl = function(handle, func, ...)
+        return new.syscall("ioctl", handle, func, ...)
+    end]]
+    new.syscall = builtins.syscall
+    new.ioctl = builtins.ioctl
 
-    if new.coroutine.resume == coroutine.resume then
+    --[[ if new.coroutine.resume == coroutine.resume then
         local resume = new.coroutine.resume
 
         function new.coroutine.resume(co, ...)
@@ -72,7 +113,9 @@ api.create_env = function(base)
 
             return table.unpack(result, 1, result.n)
         end
-    end
-
+    end]]
+    
     return new
 end
+
+return api
