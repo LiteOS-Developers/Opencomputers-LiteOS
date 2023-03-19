@@ -13,9 +13,11 @@ api.loadService = function(path)
     if _G.services[sName] ~= nil then
         return _G.services[sName], nil
     end
-    local code = _G.lib.loadfile(path)
+    local code, err = _G.lib.loadfile(path)
 
-    if code == nil then
+    if code == nil and err then
+        return nil, err
+    elseif code == nil then
         return nil, "Could not load service: " .. path
     end
     local service = code()
@@ -28,8 +30,8 @@ api.getService = function(sName)
         return _G.services[sName]
     end 
     local service, err = api.loadService("/System/Services/" .. tostring(sName) .. ".lua")
-    
-    return service
+    if err then return nil, err end
+    return service, nil
 end
 
 api.unloadService = function(sName)
