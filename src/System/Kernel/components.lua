@@ -9,6 +9,15 @@ local function tableMerge(t1, t2)
     return result
 end
 
+api.hasMethod = function(addr, method)
+    checkArg(1, addr, "string")
+    checkArg(2, method, "string")
+    if api.components[addr] ~= nil then
+        return api.components[addr].api[method] ~= nil
+    end
+    return native.methods(addr)[method] ~= nil
+end
+
 api.invoke = function(addr, method, ...)
     checkArg(1, addr, "string")
     checkArg(2, method, "string")
