@@ -1,7 +1,7 @@
 local api = {}
 
 mounts = {}
-handles = {}
+api.handles = {}
 
 local function getAddrAndPath(_path)
     if _path:sub(1, 1) ~= "/" then _path = "/" .. _path end
@@ -73,7 +73,7 @@ api.isFile = function(path)
 
     local addr, resPath = getAddrAndPath(path)
     if addr == nil then
-        --error(path .. " " .. dump(mounts))
+        -- error(path .. " " .. dump(mounts))
         error(debug.traceback())
     end
     return component.invoke(addr, "exists", resPath) and not component.invoke(addr, "isDirectory", resPath)
@@ -89,41 +89,58 @@ end
 api.read = function(handle, size)
     checkArg(1, handle, "number")
     checkArg(2, size, "number")
-    return component.invoke(handles[handle].addr, "read", handles[handle].handle, size)
+    return component.invoke(api.handles[handle].addr, "read", api.handles[handle].handle, size)
 end
 
 api.write = function(handle, buf)
     checkArg(1, handle, "number")
     checkArg(2, buf, "string")
-    return component.invoke(handles[handle].addr, "write", handles[handle].handle, buf)
+    return component.invoke(api.handles[handle].addr, "write", api.handles[handle].handle, buf)
 end
 api.seek = function(handle, _whence, offset)
     checkArg(1, handle, "number")
     checkArg(2, _whence, "number")
     checkArg(3, offset, "number")
-    return component.invoke(handles[handle].addr, "seek", handles[handle].handle, _whence, offset)
+    return component.invoke(api.handles[handle].addr, "seek", api.handles[handle].handle, _whence, offset)
 end
 api.close = function(handle)
     checkArg(1, handle, "number")
-    component.invoke(handles[handle].addr, "close", handles[handle].handle)
+    api.handles[handle].closed = true
+    component.invoke(api.handles[handle].addr, "close", api.handles[handle].handle)
 end
 
+api.getRealHandle = function(handle)
+    checkArg(1, handle, "number")
+    return api.handles[handle].handle
+end
 api.open = function(path, mode)
     checkArg(1, path, "string")
-    checkArg(2, mode, "string")
+    checkArg(2, mode, "string", "nil")
+    mode = mode or "r"
     
     local addr, resPath = getAddrAndPath(path)
     if addr == nil then
-        error("No such file or directory: " .. path)
+        return nil, "No such file or directory: " .. path
     end
     if not api.isFile(path) then
         -- error(dump(addr))
         return nil, "Cannot open file: File not existing"
-        
     end
     local handle = component.invoke(addr, "open", resPath, mode)
-    table.insert(handles, {handle = handle, addr = addr})
-    return #handles, nil
+    table.insert(api.handles, {handle = handle, addr = addr, closed=false})
+    assert(api.ensureOpen(#api.handles), "Handle " .. tostring(#api.handles) .. " (File: " .. path .. ") wasn't opened successfully")
+    return #api.handles, nil
+end
+
+api.ensureOpen = function(handle)
+    checkArg(1, handle, "number")
+    if api.handles[handle] == nil then
+        k.panic("ensureOpen on invalid Handle: " .. tonumber(handle))
+    end
+    if component.hasMethod(api.handles[handle].addr, "ensureOpen") then
+        return component.invoke(api.handles[handle].addr, "ensureOpen", api.handles[handle].handle)
+    end
+    return not api.handles[handle].closed
 end
 
 api.listDir = function(dir)

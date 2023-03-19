@@ -19,17 +19,17 @@ end
 api.isDirectory = function(dir)
     return fs.isDirectory(dir)
 end
-api.fopen = function(args)
-    return fs.open(args[1], args[2])
+api.fopen = function(file, mode)
+    return fs.open(file, mode)
 end
-api.fdread = function(args)
-    return fs.read(args[1], args[2])
+api.fdread = function(handle, size)
+    return fs.read(handle, size)
 end
-api.fdwrite = function(args)
-    return fs.write(args[1], args[2])
+api.fdwrite = function(handle, buf)
+    return fs.write(handle, buf)
 end
-api.fdseek = function(args)
-    return fs.seek(args[1], args[2], args[3])
+api.fdseek = function(handle, _whence, off)
+    return fs.seek(handle, _whence, off)
 end
 api.fdclose = function(handle)
     return fs.close(handle)
@@ -45,6 +45,16 @@ api.fLastEdit = function(file)
     return fs.getLastEdit(file)
 end
 
+api.ioctl = function(handle, func, ...)
+    checkArg(1, handle, "number")
+    checkArg(2, func, "string")
+    -- k.write("51: " .. func .. ": " .. dump(k.devices.devices[k.devices.handles[fs.getRealHandle(handle)].device]))
+    return k.devices.ioctl(fs.getRealHandle(handle), func, ...)
+end
+api.ensureOpen = function(handle)
+    return fs.ensureOpen(handle)
+end
+--[[
 api.getDevice = function(name)
     -- _G.write("getDevice(" .. name .. "): " .. dump(_G.devices[name]))
     local handle, err = fs.open("/dev/" .. name, "r")
@@ -59,9 +69,10 @@ api.mapDevice = function(args)
     checkArg(1, args[1], "string")
     checkArg(2, args[2], "string")
     
-    _G.devices.register(args[2], _G.devices[args[1]])
-    -- _G.write(dump(_G.devices[args[2]]))
-end
+    _G.devices.register(args[2], _G.devices[args[1])
+    
+    end
+]]
 api.filterDevices = function(name)
     local length = string.len(name)
     local result = {}

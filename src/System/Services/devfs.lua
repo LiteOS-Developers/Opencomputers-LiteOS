@@ -15,8 +15,27 @@ devfs.create = function()
         checkArg(1, mode, "string")
 
         local name = string.sub(file, 2, string.len(file))
-        table.insert(proxy.handles, {device=name})
-        return #proxy.handles
+        local pos = #proxy.handles + 1
+        local value = {device=name}
+        proxy.handles[pos] = value
+        -- k.write(dump(pos))
+        if pos == 10 then
+        end
+        if proxy.handles[pos] == nil then
+            k.write(dump(proxy.handles[pos] == nil))
+            k.panic("Device " .. tostring(pos) .. " not opened correctly")
+        end
+        return pos
+    end
+    proxy.ensureOpen = function(handle)
+        checkArg(1, handle, "number")
+        -- k.write("ensureOpen " .. tostring(tonumber(handle)))
+        -- error("1")
+        if type(proxy.handles[handle]) ~= "table" then
+            k.write("34 is true " .. dump(handle))
+            return false
+        end 
+        return proxy.handles[handle].closed ~= true
     end
     proxy.seek = function(handle, wh, off)
         error("Devices doesn't support seek")
@@ -56,7 +75,9 @@ devfs.create = function()
         error("Device doesn't support remove")
     end
     proxy.close = function(handle)
-        proxy.handles[handle] = nil
+        if proxy.ensureOpen(handle) then
+            proxy.handles[handle].closed = true
+        end
     end
     proxy.size = function()
         return 0
@@ -74,12 +95,34 @@ devfs.create = function()
     proxy.ioctl = function(handle, method, ...)
         checkArg(1, handle, "number")
         checkArg(2, method, "string")
+        
 
-        return proxy.devices[proxy.handles[handle].device][method](...)
+        if not proxy.ensureOpen(handle) then
+            k.write(tostring(handle) .. " " .. method .. " " .. dump(table.pack(...)) .. " " .. dump(proxy.handles[handle]))
+            k.panic("Handle is not open")
+            return {}
+        end
+        local r = proxy.devices[proxy.handles[handle].device][method](...)
+        
+        return r
     end
     proxy.getAPI = function(handle)
         checkArg(1, handle, "number")
+        if not proxy.ensureOpen(handle) then return nil end
+
         return proxy.devices[proxy.handles[handle].device]
+    end
+
+    -- Maps device {name} to {target} (Creates an Alias {target} for {name})
+    proxy.mapDevice = function(target, name)
+        checkArg(1, name, "string", "nil")
+
+        if name == nil then
+            proxy.devices[target] = nil
+        end
+        local old = proxy.devices[target]
+        proxy.devices[target] = proxy.devices[name]
+        return old
     end
     return proxy
 end
