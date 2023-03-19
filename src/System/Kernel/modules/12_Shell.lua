@@ -98,21 +98,6 @@ k.shell.create = function(pwd, env, name)
             _G = _ENV
             return thread, nil
             
-            --[[local res, err = k.scall()
-            if not res then
-                _ENV.k.panic("Could not load file: \n" .. err:gsub("\t", "  "))
-            end
-            res, err = k.scall(err.main, table.pack(...))
-
-            
-            
-            if res == false then
-                return nil, err
-            end
-            
-            -- _ENV.k.write(dump(err))
-            return err, nil]]
-            
         end
         return nil, "No File"
     end
