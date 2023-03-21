@@ -20,11 +20,13 @@ end
 
 k.printk(k.L_INFO, "Running CoreOS v" .. _G.VERSION_INFO.major .. "." .. _G.VERSION_INFO.minor .. "." .. _G.VERSION_INFO.micro .. "-".. _G.VERSION_INFO.release)
 
-k.threading.createThread("ProcessDeamon", function()
+local t = function()
     while true do
         coroutine.yield()
     end
-end) --:start()
+end
+k.threading.createThread("ProcessDeamon-1", t):start()
+k.threading.createThread("ProcessDeamon-2", t):start()
 
 
 local function parseError(...)
@@ -55,11 +57,10 @@ k.threading.createThread("shell", function()
     if not sh then
         k.panic(err)
     end
-    local result = sh:execute("/Bin/shell.lua")
-    repeat
-       coroutine.yield()
-    until result.stopped
-    k.write("ExitCode: " .. dump(result.result))
+    local result, err = sh:execute("/Bin/shell.lua")
+    
+    k.write("ExitCode: " .. dump({result, err}))
+    -- k.panic(result)
 
 
     _G.syscall, _G.ioctl = nil, nil

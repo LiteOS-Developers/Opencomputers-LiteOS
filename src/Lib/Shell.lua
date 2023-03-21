@@ -17,33 +17,34 @@ api.connect = function(tty)
     local sh = {}
     function sh:chdir(dir)
         checkArg(1, dir, "string", "nil")
-        return table.unpack(api.ioctl(device, "chdir", dir))
+        return api.ioctl(device, "chdir", dir)
     end
     function sh:getenv(key)
         checkArg(1, key, "string", "nil")
-        return table.unpack(api.ioctl(device, "getenv", key))
+        return api.ioctl(device, "getenv", key)
     end
     function sh:setenv(key, value)
-        return table.unpack(api.ioctl(device, "setenv", key, value))
+        api.ioctl(device, "setenv", key, value)
     end
     function sh:execute(file, ...)
         checkArg(1, file, "string")
-        local result = api.ioctl(device, "execute", file, ...)
-        -- if type(result) == "table" then
-        --     return table.unpack(result)
-        -- end
-        return result
+        local result, err = api.ioctl(device, "execute", file, ...)
+        if err then return -1, err end
+        repeat
+            coroutine.yield()
+        until result.stopped
+        return result.result
     end
     function sh:auth(username)
         checkArg(1, username, "string", "nil")
-        return table.unpack(api.ioctl(device, "auth", username))
+        return api.ioctl(device, "auth", username)
     end
 
     function sh:resolve(name)
         checkArg(1, name, "string")
         local path = self:getenv("PATH")
-        if self.env.PATH == nil then
-            return ""
+        if path == nil then
+            return nil, "PATH variable isn't set"
         end
         paths = split(path, ":")
         for k, v in pairs(paths) do
@@ -66,7 +67,8 @@ api.connect = function(tty)
         return nil
     end
 
-    function sh:print(line)        if not filesystem.ensureOpen(device) then
+    function sh:print(line)        
+        if not filesystem.ensureOpen(device) then
             _G.print("Device Not Opened!")
             return false
         end
@@ -76,10 +78,29 @@ api.connect = function(tty)
 
     function sh:read(msg)
         checkArg(1, msg, "string")
-        
         return api.ioctl(device, "read", msg)
     end
 
+    function sh:resolvePath(dir)
+        if string.sub(dir, 1, 1) ~= "/" then
+            dir = self:chdir() .. "/" .. dir
+        end
+        local d = ""
+        for k, v in pairs(split(dir, "/")) do
+            if v == ".." and d ~= "/" then
+                local parts = split(d, "/")
+                table.remove(parts, #parts)
+                d = ""
+                for _, p in pairs(parts) do
+                    d = d .. "/" .. p
+                end
+            elseif v == "." then
+            else
+                d = d .. "/" .. v
+            end
+        end
+        return d
+    end
     function sh:close()
         return table.unpack(fs.close(device))
     end
