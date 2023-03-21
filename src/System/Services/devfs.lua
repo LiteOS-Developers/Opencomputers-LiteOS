@@ -102,8 +102,10 @@ devfs.create = function()
             k.panic("Handle is not open")
             return {}
         end
-        local r = proxy.devices[proxy.handles[handle].device][method](...)
-        
+        local r = table.pack(proxy.devices[proxy.handles[handle].device][method](...))
+        -- k.write(method .. " " .. dump(r))
+
+        -- if not r then k.panic(dump(err)) end
         return r
     end
     proxy.getAPI = function(handle)
