@@ -49,7 +49,7 @@ k.shell.create = function(pwd, env, name)
 
     local sh = {
         pwd = "/",
-        env={},
+        env=env,
     }
     function sh.device()
         return k.devices.register("tty0", sh)
@@ -73,8 +73,8 @@ k.shell.create = function(pwd, env, name)
 
     function sh.setenv(key, value)
         checkArg(1, key, "string")
-        checkArg(2, value, "string")
-        sh.env[key] = value
+        -- checkArg(2, value, "string")
+        sh.env[key] = tostring(value)
     end
 
     function sh.execute(file, args)
@@ -93,8 +93,8 @@ k.shell.create = function(pwd, env, name)
                 local f = _ENV.k.system.executeFile(file, env)
                 return f.main(args)
             end)
-            
             thread:start()
+            
             _G = _ENV
             return thread, nil
             
@@ -104,12 +104,28 @@ k.shell.create = function(pwd, env, name)
 
     function sh.auth(username)
         checkArg(1, username, "string", "nil")
-        local username, password
+        local password
+        local hostname = k.io.getFileContent("/Config/hostname")
 
         while true do
-            local data = table.pack(event.pull("key_down"))
-            local char = utf8.char(data[2])
-            sh.print(char)
+            if username == nil then
+                username = sh.read("Username> ")
+            end
+            password = sh.read(username .. "@" .. hostname .. "'s password> ", "*")
+            local result = k.users.login(username, password)
+            -- k.write(dump(result))
+            if result.result then
+                return {
+                    success = true,
+                    home = result.home,
+                    hostname = hostname,
+                    username = username
+                }
+            else 
+                sh.print("Invalid username or password. Please try again")
+                username = nil
+                password = nil
+            end
         end
     end
 
@@ -127,12 +143,47 @@ k.shell.create = function(pwd, env, name)
         return true
     end
 
-    function sh.read(msg)
+    function sh.read(msg, replacement)
         checkArg(1, msg, "string", "nil")
+        checkArg(2, replacement, "string", "nil")
+        if replacement ~= nil then replacement = replacement:sub(1, 1) end
         msg = msg or ""
-        --local data = table.pack(event.pull("key_down"))
-        --local char = utf8.char(data[2])
-        --sh.print(char)
+        local result = ""
+        k.gpu.set(1, k.screen.y, msg)
+        k.screen.x = k.screen.x + msg:len() - 1
+        local x = k.screen.x - 1
+        local y = k.screen.y
+        while true do
+            local _, addr, char, code, player = table.unpack(event.pull("key_down"))
+            utfChar = utf8.char(char)
+            char = tonumber(tostring(string.format("%.0f", char)))
+            if utfChar == "\b" then
+                local oldLen = result:len()
+                result = result:sub(1, result:len() - 1)
+                k.gpu.fill(k.screen.x, k.screen.y, x, y, " ")
+                if not replacement then
+                    k.gpu.set(x + 2, y, result)
+                else
+                    k.gpu.set(x + 2, y, replacement:rep(result:len()))
+                end
+                k.screen.x = x + result:len() + 1
+            elseif utfChar == "\r" then
+                k.screen.x = 1
+                k.screen.y = k.screen.y + 1
+                return result
+            elseif utfChar == "\t" then
+                result = result .. "    "
+                k.gpu.set(k.screen.x, k.screen.y, "    ")
+                k.screen.x = k.screen.x + 4
+            else
+                if char == 0 or char == 8 or char == 9 or char == 13 then
+                else
+                    result = result .. utfChar
+                    k.screen.x = k.screen.x + 1
+                    k.gpu.set(k.screen.x, k.screen.y, replacement or utfChar)
+                end
+            end
+        end
     end
 
     function sh.createSubshell(pwd)
