@@ -13,10 +13,8 @@ function k.processSyscall(result)
             table.remove(r, 1)
             r.n = nil
             local data = r
-            -- k.write("16: " .. dump(data))
 
             local ok, result = k.callSyscall(call, data)
-            -- k.write("Syscall: " .. dump(call) .. " " .. dump(data) .. " -> " .. dump(result))
             if not ok then
                 return "syscall", nil, result
             else
@@ -29,7 +27,6 @@ end
 function k.callSyscall(call, args)
     if k.syscalls[call] ~= nil then
         local r = k.syscalls[call](table.unpack(args))
-        -- k.write("9: " .. dump(call) .. " " .. dump(r) .. " " .. dump(args))
         return true, r
     else
         return false, "Syscall not found"

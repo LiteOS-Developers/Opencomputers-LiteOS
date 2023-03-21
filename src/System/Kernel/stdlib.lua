@@ -23,6 +23,8 @@ _G.table.keys = function(t)
 end
 
 _G.split = function(inputstr, sep)
+    checkArg(1, inputstr, "string")
+    checkArg(2, sep, "string")
     if sep == nil then
         sep = "%s"
     end

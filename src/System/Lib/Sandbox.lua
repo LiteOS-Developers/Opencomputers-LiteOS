@@ -38,10 +38,11 @@ builtins.syscall = function(call, ...)
 end
 
 builtins.ioctl = function(handle, func, ...)
-    local v = table.pack(builtins.syscall("ioctl", handle, func, ...))
+    local v = builtins.syscall("ioctl", handle, func, ...)
     if type(v) ~= "table" then
         return v
     end
+    -- k.write(func .. " " .. dump(v))
     return table.unpack(v)
 end
 
@@ -64,7 +65,7 @@ api.create_env = function(base)
     new.load = function(a, b, c, d)
         return k.load(a, b, c, d or {}) -- k.current_process().env
     end
-    new.error = k.write
+    new.error = k.panic
     new.package = require("Package")
     new.require = new.package.require
     local filesystem = k.filesystem
@@ -79,6 +80,8 @@ api.create_env = function(base)
         getFilesize = filesystem.getFilesize,
         getLastEdit = filesystem.getLastEdit,
         ensureOpen = filesystem.ensureOpen,
+        isFile = filesystem.isFile,
+        isDirectory = filesystem.isDirectory
     }
 
     new.scall = k.scall

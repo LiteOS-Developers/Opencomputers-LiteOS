@@ -33,7 +33,7 @@ system.executeFile = function(path, env)
         local l, e = load(data, "=" .. path, "bt", env)
 
         if l == nil or e ~= nil then
-            write("Error:".. e)
+            k.panic("Error:".. e)
         end
         
         res = l()
