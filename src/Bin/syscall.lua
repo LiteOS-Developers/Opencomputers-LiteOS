@@ -1,5 +1,10 @@
+local shell = require("Shell")
+local uuid = require("uuid")
+
 return {
     main=function(args)
-        shell:print(dump(syscall("test")))
+        local sh = shell.connect("tty")
+        sh:print(uuid.next())
+        sh:print(uuid.next())
     end
 }
