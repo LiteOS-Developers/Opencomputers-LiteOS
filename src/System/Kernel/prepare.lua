@@ -15,8 +15,8 @@ if gpu then
         gpu.setForeground(0xFFFFFF)
         gpu.setBackground(0x000000)
         gpu.fill(1, 1, w, h, " ")
-        _G.devices.screen = component.proxy(screen)
-        _G.devices.gpu = gpu
+        _G.screen.screen = component.proxy(screen)
+        _G.screen.gpu = gpu
     end
 end
 if computer.getArchitecture() ~= "Lua 5.3" then

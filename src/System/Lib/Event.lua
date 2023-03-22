@@ -36,7 +36,7 @@ event.pull = function(name, timeout)
             end
         end
         if signal[1] == name then goto loopEnd end
-        coroutine.yield()
+        --coroutine.yield()
     until signal[1] == name and computer.uptime() >= time
     ::loopEnd::
     if _G.eventListeners[name] ~= nil then

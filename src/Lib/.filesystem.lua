@@ -1,9 +1,7 @@
 local api = {}
 
-
-
 api.open = function(path, mode)
-    return syscall("fopen", path, mode)
+    return syscall("fopen", path, mode or "r")
 end
 api.read = function(handle, size)
     checkArg(1, handle, "number")
@@ -11,7 +9,7 @@ api.read = function(handle, size)
     return syscall("fdread", handle, size)
 end
 api.listDir = function(dir)
-    return syscall("fListDir", dir)[1]
+    return syscall("fListDir", dir)
 end
 api.isFile = function(file)
     checkArg(1, file, "string")

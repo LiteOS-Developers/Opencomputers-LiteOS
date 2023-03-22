@@ -15,7 +15,8 @@ end
 api.login = function(user, password)
     local ctn = io.getFileContent("/Config/users")
     ctn = split(ctn, "\n")
-    for k, v in pairs(ctn) do
+    local device = k.devices.open("/data", "r")
+    for _, v in pairs(ctn) do
         if string.sub(v, -1) == "\r" then
             v = string.sub(v, 0, -2)
         end
@@ -23,15 +24,16 @@ api.login = function(user, password)
         local splitted = split(v, ":")
 
         username, hash, home = table.unpack(splitted)
-        local hash2 = tohex(_G.devices.data.sha256(password))
-        local result = hash2 == hash
+        local str = table.unpack(k.devices.ioctl(device, "sha256", password))
+        local hashed = tohex(str)
+        local result = hashed == hash and username == user
         ret = {result=result}
         if result then
             ret.home = home
+            return ret
         end
-        return ret
     end
-    return false
+    return {result=false}
 end
 
 return api

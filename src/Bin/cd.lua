@@ -1,20 +1,20 @@
 return {
-    main=function(granted, args)
-        local shell = getTTY("tty")
-        -- _G.write(dump(table.keys(_G.devices)))
-        if #args >= 1 then
-            local dir = shell:resolvePath(args[1])
-            if syscall("isDirectory", dir) then
+    main=function(args)
+        local shell = require("Shell").connect("tty0")
+
+        if #args >= 2 then
+            local dir = shell:resolvePath(args[2])
+            if filesystem.isDirectory(dir) then
                 shell:chdir(dir)
             else
-                shell:setFore(0xF00000)
+                local gpu = fs.open("/dev/gpu")
+                ioctl(gpu, "setForeground", 0xF00000)
                 shell:print("cd: No such directory: " .. tostring(dir))
-                shell:setFore(0xFFFFFF)
+                ioctl(gpu, "setForeground", 0xFFFFFF)
+                fs.close(gpu)
             end
         else
-            shell:print(tostring(shell:getenv("PWD")))
+            shell:print(dump(shell:chdir()))
         end
-        -- syscall("test", d)
-        -- shell:print(tostring(d.a))
     end
 }

@@ -1,11 +1,14 @@
+local shell = require("Shell")
+
+
 return {
-    main = function(granted, args)
-        local shell = getTTY("tty")
+    main = function(args)
+        local sh = shell.connect("tty0")
         if #args >= 1 then
-            shell:print(shell:resolve(args[1]))
+            sh:print(sh:resolve(args[1]))
             return 0
         else
-            shell:print("Missing Argument: \n  Usage: where <file>")
+            sh:print("Missing Argument: \n  Usage: where <file>")
             return 1
         end
     end

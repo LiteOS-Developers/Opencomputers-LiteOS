@@ -1,4 +1,5 @@
-local fs = require("filesystem")
+local fs = filesystem
+local shell = require("Shell")
 
 local function max(max, v) 
     checkArg(1, max, "number")
@@ -38,42 +39,60 @@ local function formatDate(epochms)
 end
 
 return {
-    main=function(granted, args)
-        shell = getTTY("tty")
-        local dir = shell:getpwd()
+    main=function(args)
+        local sh = shell.connect("tty0")
+        local dir = sh:chdir()
+        local gpu = fs.open("/dev/gpu")
         if #args >= 2 then
-            dir = shell:resolvePath(args[2])
+            -- dir, e = pcall(sh.resolvePath, sh, args[2])
+            dir = sh:resolvePath(args[2])
+            -- print(dump(e))
             if not fs.isDirectory(dir) then
-                shell:setFore(0xF00000)
-                shell:print("cd: So such directory: " .. tostring(dir))
-                shell:setFore(0xFFFFFF)
+                ioctl(gpu, "setForeground", 0xF00000)
+                sh:print("cd: So such directory: " .. tostring(dir))
+                ioctl(gpu, "setForeground", 0xFFFFFF)
+                fs.close(gpu)
+                return
             end
         end
         local size = 0 
         local abs = ""
         local files = fs.listDir(dir)
-        -- _G.write(dump(files))
         files.n = nil
-        local gpu = shell:getGPU()
-        local w,h = gpu.getResolution()
-        local line = 0
+        local cursor, err = fs.open("/dev/cursor")
+        local x, y = ioctl(cursor, "get")
+        local w, h = ioctl(gpu, "getResolution")
+        local line = ""
         for k, v in pairs(files) do
+            print("")
             abs = dir .. "/" .. v
-            if line + string.len(v) + 2 > w then
-                shell:print("")
+            if x + v:len() + 2 > w and k ~= #files then
+                x = 1
+                y = y + 1
             end
             if fs.isFile(abs) then
                 size = fs.getFilesize(abs)
-                shell:setFore(0x00F000)
-                shell:print(v .. "  ", false)
-                line = line + string.len(v) + 2
-                shell:setFore()
+                ioctl(gpu, "setForeground", 0x00F000)
+                -- line = line .. v .. "  "
+                ioctl(gpu, "set", x, y, v .. "  ")
+                ioctl(gpu, "setForeground", 0xFFFFFF)
+                x = x + v:len() + 2
             else
-                shell:setFore(0x0000F0)
-                shell:print(string.sub(v, 1, -2) .. "  ", false)
-                shell:setFore()
+                ioctl(gpu, "setForeground", 0x0000F0)
+                ioctl(gpu, "set", x, y, v .. "  ")
+                ioctl(gpu, "setForeground", 0xFFFFFF)
+                x = x + v:len() + 2
             end
         end
-        shell:print(" ",true)
+        -- if y >= h then
+        --     ioctl(gpu, "copy", 1, 2, w, h - 1, 0, -1)
+        --     ioctl(gpu, "fill", 1, h, w, 1, " ")
+        --     y = y - 1
+        -- end
+        fs.close(gpu)
+        y = y + 1
+        x = 1
+        ioctl(cursor, "set", x, y)
+        fs.close(cursor)
     end
 }

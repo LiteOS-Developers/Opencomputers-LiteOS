@@ -1,5 +1,5 @@
 local shell = {}
-local fs = require("Service").getService("filesystem")
+local fs = service.getService("filesystem")
 local io = require("System.io")
 local users = require("System.Users")
 
@@ -113,7 +113,7 @@ shell.create = function(pwd, devicename)
         path="",
         name=nil,
     }
-    sh.gpu = _G.devices.gpu
+    sh.gpu = _G.screen.gpu
     
     local file = syscall("fopen", {"/Config/env", "r"})
     -- _G.write(dump(file))
@@ -190,7 +190,7 @@ shell.create = function(pwd, devicename)
         if not fs.isFile(file) then
             return false, "FileNotFound"
         end
-        ok, err = xpcall(system.executeFile, debug.traceback, file, env)
+        ok, err = xpcall(k.system.executeFile, debug.traceback, file, env)
         
         if ok == true and err == nil then
             return false, "CommandNotFound"
@@ -225,12 +225,12 @@ shell.create = function(pwd, devicename)
             if username == nil then
                 username = self:read("Username> ")
             end
-            system.sleep(0.02)
+            k.system.sleep(0.02)
 
             hostname = io.getFileContent("/Config/hostname")
             password = self:read(username .. "@" .. hostname .. "'s Password> ")
             local result = users.login(username, password)
-            system.sleep(0.02)
+            k.system.sleep(0.02)
             if result.result == true then
                 return {
                     success=true,
@@ -274,7 +274,6 @@ shell.create = function(pwd, devicename)
         end
         return d
     end
-
     
     function sh:print(msg, newLine)
         local lines = split(msg, "\n")
@@ -288,7 +287,7 @@ shell.create = function(pwd, devicename)
     end
     function sh:setFore(color, isPalette)
         color = color or 0xFFFFFF
-        return _G.devices.gpu.setForeground(color, isPalette)
+        return _G.screen.gpu.setForeground(color, isPalette)
     end
     -- function sh:clear()
     --     local w,h = syscall("getResolution", self.gpu)
@@ -335,7 +334,7 @@ shell.create = function(pwd, devicename)
             key = getKey()
             if key == "BACKSPACE" and _G.screen.x - string.len(msg) >= 1 then
                 _G.screen.x = _G.screen.x - 1
-                _G.devices.gpu.fill(0, _G.screen.y, _G.screen.w, 1, " ")
+                _G.screen.gpu.fill(0, _G.screen.y, _G.screen.w, 1, " ")
                 value = string.sub(value, 0, -2)
                 _G.screen.x = 1
                 print(msg .. value, false)
@@ -357,7 +356,7 @@ shell.create = function(pwd, devicename)
             end
             --write(key)
             ::nothing::
-            system.sleep(0.1)
+            k.system.sleep(0.1)
         end
     end
     function sh:createDevice(devicename)

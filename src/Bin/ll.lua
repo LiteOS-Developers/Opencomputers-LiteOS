@@ -1,4 +1,4 @@
-local fs = require("filesystem")
+local fs = filesystem
 
 local function max(max, v) 
     checkArg(1, max, "number")
@@ -26,7 +26,11 @@ local function nod(n)
 local function pad(txt)
     txt = tostring(txt)
     return #txt >= 2 and txt or "0"..txt
-  end
+end
+local function toint(n)
+    checkArg(1, n, "number")
+    return string.format("%.0f", n)
+end
 
 local function formatDate(epochms)
     --local day_names={"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"}
@@ -38,15 +42,18 @@ local function formatDate(epochms)
 end
 
 return {
-    features = {},
-    main=function(granted, args)
-        local dir = shell:getpwd()
+    main=function(args)
+        local shell = require("Shell").connect("tty0")
+        local dir = shell:chdir()
+        local gpu = fs.open("/dev/gpu")
         if #args >= 2 then
             dir = shell:resolvePath(args[2])
             if not fs.isDirectory(dir) then
-                shell:setFore(0xF00000)
+                ioctl(gpu, "setForeground", 0xF00000)
                 shell:print("cd: So such directory: " .. tostring(dir))
-                shell:setFore(0xFFFFFF)
+                ioctl(gpu, "setForeground", 0xFFFFFF)
+                fs.close(gpu)
+                return
             end
         end
         if dir == "" then dir = "/" end 
@@ -56,21 +63,27 @@ return {
 
         local files = fs.listDir(dir)
         files.n = nil
-        for k, v in pairs(files) do
+        for _, v in ipairs(files) do
             abs = dir .. "/" .. v
-            if fs.isFile(abs) then
-                size = fs.getFilesize(abs)
-                shell:print("f-rw " .. trunc(tostring(toint(size)), 7) .. " " .. formatDate(fs.getLastEdit(abs)/1000) .. " ", false)
-                shell:setFore(0x00F000)
-                shell:print(v)
-                shell:setFore()
+            if abs:sub(1, 2) == "//" then abs = abs:sub(2, -1) end
+            local size = fs.getFilesize(abs)
+            local lastEdited = fs.getLastEdit(abs)
+            local t = "-rw " .. trunc(tostring(toint(size)), 7) .. " "
+            if lastEdited == 0 then
+                t = t .. string.rep(" ", 20) .. " "
             else
-                shell:print("d-rw " .. trunc(tostring(0), 7) .. " " .. formatDate(fs.getLastEdit(abs)/1000) .. " ", false)
-                shell:setFore(0x0000F0)
-                shell:print(v)
-                shell:setFore()
+                t = t .. formatDate(lastEdited/1000) .. " "
             end
+            x = t:len() + 1
+            if fs.isFile(abs) then
+                print("f" .. t .. v)
+            else
+                print("d" .. t .. v)
+            end
+            -- y = y + 1
         end
-        shell:print("")
+        -- x = 1
+        
+        return 0
     end
 }
