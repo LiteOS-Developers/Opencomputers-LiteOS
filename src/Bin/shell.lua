@@ -5,9 +5,7 @@ _G.print = print
 
 return {
     main = function(args)
-        print("TEST?")
         local sh = shell.connect("tty")
-        -- print(dump(sh))
         sh:setenv("SHELL", "/Bin/shell.lua")
         local res = sh:auth()
         if not res.success then
