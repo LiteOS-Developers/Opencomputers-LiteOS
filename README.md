@@ -1,20 +1,16 @@
 # OpenComputers-LiteOS
 
-NOTE: The file System/keycodes.lua is a german keyboard layout. If you have other one please change and feel free to make a pull request
-Fileformat: System/keycodes/keycodes-%%.lua
 
-NOTE 2: This OS is in development and shouldn't be used in production and contains a lot of debug messages
+NOTE: This OS is in development and shouldn't be used in production and contains a lot of debug messages
 
-NOTE 3: It has currently a bug that you cannot run programs since i rewritten the entier shell system
-
-NOTE 4: Only Windows build supported.
+NOTE 2: Only Windows build supported. But there are releases marked as pre-release
 
 # Install
 - Clone this repositiory to an folder
 - Run build.bat (windows)
-- Copy contents of build directory to an opencomputers hard harddrive
-- Put an Lua EEPROM into the computer and run it. it should flash the needed bios image and reboot after a short while 
-- Login using root and 1234 (you will see the password)
+- Copy contents of build directory to an opencomputers hard hard drive
+- Put an Lua EEPROM into the computer and run it. it should flash the needed bios image and reboot after a short period of time 
+- Login using root and 1234 (you won't see the password)
 
 Requirements
  - Screen Tier 2 or higher
