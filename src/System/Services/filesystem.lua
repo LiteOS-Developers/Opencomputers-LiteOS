@@ -5,12 +5,12 @@ api.handles = {}
 
 local function getAddrAndPath(_path)
     if _path:sub(1, 1) ~= "/" then _path = "/" .. _path end
-    if mounts[_path] ~= nil then return mounts[_path], "/" end 
+    if mounts[_path] ~= nil then return mounts[_path].addr, "/" end 
     local parts = {}
     
     _path = string.sub(_path, 2, -1)
     for part in string.gmatch(_path, "([^/]+)") do
-      table.insert(parts, part)
+        table.insert(parts, part)
     end
     
     local i = #parts
@@ -24,18 +24,28 @@ local function getAddrAndPath(_path)
         if mounts[joined] ~= nil then
             local resPath = ""
             for j=i+1,#parts do resPath = resPath .. "/"..parts[j] end
-            return mounts[joined], resPath
+            return mounts[joined].addr, resPath
         end
         i = i - 1
     until i == 0
-    return mounts["/"], _path
-  end
+    return mounts["/"].addr, _path
+end
+
+local function parts(p)
+    if p:sub(1, 1) == "/" then p = p:sub(2, -1) end
+    local parts = {}
+    for part in string.gmatch(p, "([^/]+)") do
+        table.insert(parts, part)
+    end
+    return parts
+end
 
 -------------------------------------------
 
-api.mount = function(addr, tPath)
+api.mount = function(addr, tPath, opts)
     checkArg(1, addr, "string")
     checkArg(2, tPath, "string")
+    checkArg(3, opts, "table", "nil")
 
     if not mounts["/"] then
         if tPath ~= "/" then
@@ -43,7 +53,7 @@ api.mount = function(addr, tPath)
         end
     end
 
-    mounts[tPath] = addr
+    mounts[tPath] = {addr=addr,opts=opts}
 end
 
 api.isMount = function(point)
@@ -54,7 +64,7 @@ end
 api.umount = function(point)
     checkArg(1, point, "string")
     
-    if not isMount(point) then
+    if not api.isMount(point) then
         return false
     end
     mounts[point] = nil
@@ -83,7 +93,7 @@ api.isDirectory = function(path)
     checkArg(1, path, "string")
     
     local addr, resPath = getAddrAndPath(path)
-    return component.invoke(addr, "exists", resPath) and component.invoke(addr, "isDirectory", resPath)
+    return (component.invoke(addr, "exists", resPath) and component.invoke(addr, "isDirectory", resPath)) or api.isMount(path)
 end
 
 api.read = function(handle, size)
@@ -145,7 +155,19 @@ end
 
 api.listDir = function(dir)
     local addr, resPath = getAddrAndPath(dir)
-    return component.invoke(addr, "list", resPath)
+    local files = component.invoke(addr, "list", resPath)
+    for path, o in pairs(mounts) do
+        if o.addr ~= addr then
+            local parts = parts(path)
+            table.remove(parts, #parts)
+            if "/" .. table.concat(parts, "/") == dir then
+                if path:sub(1, 1) == "/" then path = path:sub(2, -1) end
+                if path:sub(-1, -1) ~= "/" then path = path .. "/" end
+                table.insert(files, path)
+            end
+        end
+    end
+    return files
 end
 
 api.getFilesize = function(file)
