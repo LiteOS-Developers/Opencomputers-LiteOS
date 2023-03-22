@@ -23,9 +23,7 @@ return {
             command = sh:read(host .. ":" .. pwd .. "# ")
             if command:len() == 0 then goto continue end
             -- print(dump(command))
-            if command == "exit" then
-                break
-            end
+            
             local arguments = split(command, " ")
             local cmd = arguments[1]
             local args = select(2, arguments)

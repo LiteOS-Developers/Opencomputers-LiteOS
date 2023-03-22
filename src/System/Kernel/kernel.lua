@@ -41,7 +41,7 @@ local function parseError(...)
 end
 
 
-k.threading.createThread("shell", function()
+k.threading.createThread("init", function()
 
 
     local sandbox = require("Sandbox")
@@ -64,7 +64,7 @@ k.threading.createThread("shell", function()
 
 
     _G.syscall, _G.ioctl = nil, nil
-end):start()
+end, 1):start()
 
 -- thread management (look in /System/Kernel/threading.lua)
 while true do
