@@ -61,9 +61,10 @@ return {
         files.n = nil
         local cursor, err = fs.open("/dev/cursor")
         local x, y = ioctl(cursor, "get")
-        local w,h = ioctl(gpu, "getResolution")
+        local w, h = ioctl(gpu, "getResolution")
         local line = ""
         for k, v in pairs(files) do
+            print("")
             abs = dir .. "/" .. v
             if x + v:len() + 2 > w and k ~= #files then
                 x = 1
@@ -83,6 +84,11 @@ return {
                 x = x + v:len() + 2
             end
         end
+        -- if y >= h then
+        --     ioctl(gpu, "copy", 1, 2, w, h - 1, 0, -1)
+        --     ioctl(gpu, "fill", 1, h, w, 1, " ")
+        --     y = y - 1
+        -- end
         fs.close(gpu)
         y = y + 1
         x = 1
