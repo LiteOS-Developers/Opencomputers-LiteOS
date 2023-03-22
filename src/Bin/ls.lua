@@ -40,7 +40,7 @@ end
 
 return {
     main=function(args)
-        local sh = shell.connect("tty")
+        local sh = shell.connect("tty0")
         local dir = sh:chdir()
         local gpu = fs.open("/dev/gpu")
         if #args >= 2 then

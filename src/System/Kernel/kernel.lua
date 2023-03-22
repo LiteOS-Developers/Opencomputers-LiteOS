@@ -57,9 +57,9 @@ k.threading.createThread("shell", function()
     if not sh then
         k.panic(err)
     end
-    local result, err = sh:execute("/Bin/shell.lua")
-    
-    k.write("ExitCode: " .. dump({result, err}))
+    while true do
+        sh:execute("/Bin/shell.lua")
+    end
     -- k.panic(result)
 
 
