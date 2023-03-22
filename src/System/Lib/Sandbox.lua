@@ -68,6 +68,10 @@ api.create_env = function(base)
     new.error = k.panic
     new.package = require("Package")
     new.require = new.package.require
+
+    new.computer = {
+        uptime = computer.uptime
+    }
     local filesystem = k.filesystem
     
     new.filesystem = {

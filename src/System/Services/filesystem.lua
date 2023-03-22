@@ -179,6 +179,11 @@ api.getFilesize = function(file)
 end
 
 api.getLastEdit = function(path)
+    path = "/" .. table.concat(parts(path), "/")
+    -- k.write(path)
+    if mounts[path] ~= nil then 
+        return 0
+    end
     local addr, resPath = getAddrAndPath(path)
     return component.invoke(addr, "lastModified", resPath)
 end

@@ -23,6 +23,18 @@ k.devices.register("cursor", {
         return k.screen.x, k.screen.y
     end 
 })
+
+k.devices.register("ps", {
+    list = function()
+        local processes = {}
+        for pid, o in pairs(k.threading.threads) do
+            if not o.stopped then
+                table.insert(processes, o)
+            end
+        end
+        return processes
+    end
+})
 -- k.devices.register("events", k.event)
 
 component.register(k.devices.addr, "devfs", k.devices)
