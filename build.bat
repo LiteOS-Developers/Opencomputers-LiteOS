@@ -11,7 +11,7 @@ robocopy src\Bin\ build\Bin > NUL
 robocopy src\System\ build\System > NUL
 
 robocopy src\System\Kernel build\System\Kernel >NUL
-robocopy src\System\Kernel\modules build\System\Kernel\modules
+robocopy src\System\Kernel\modules build\System\Kernel\modules > NUL
 robocopy src\System\keyboards build\System\keyboards >NUL
 robocopy src\System\Lib build\System\Lib >NUL
 robocopy src\System\Services build\System\Services >NUL
