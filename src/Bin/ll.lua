@@ -63,53 +63,27 @@ return {
 
         local files = fs.listDir(dir)
         files.n = nil
-        local cursor = fs.open("/dev/cursor")
-        local x, y = ioctl(cursor, "get")
-        local w, h = ioctl(gpu, "getResolution")
-        -- local buffer = ioctl(gpu, "allocateBuffer", w, h)
-        -- ioctl(gpu, "bitblt", buffer, 1, 1, w, h, 0, 1, 1)
-        -- local r = ioctl(gpu, "setActiveBuffer", buffer)
         for _, v in ipairs(files) do
             abs = dir .. "/" .. v
             if abs:sub(1, 2) == "//" then abs = abs:sub(2, -1) end
-            size = fs.getFilesize(abs)
-            -- print(tostring(tostring(toint(size))))
-            local t = "-rw " .. trunc(tostring(toint(size)), 7) .. " " .. formatDate(fs.getLastEdit(abs)/1000) .. " "
-
+            local size = fs.getFilesize(abs)
+            local lastEdited = fs.getLastEdit(abs)
+            local t = "-rw " .. trunc(tostring(toint(size)), 7) .. " "
+            if lastEdited == 0 then
+                t = t .. string.rep(" ", 20) .. " "
+            else
+                t = t .. formatDate(lastEdited/1000) .. " "
+            end
             x = t:len() + 1
             if fs.isFile(abs) then
-                t = "f"..t
-                ioctl(gpu, "set", 1, y, t .. v)
-                -- print(t .. v)
-                -- ioctl(gpu, "setForeground", 0x00F000)
-                -- ioctl(gpu, "set", x, y, v)
-                -- ioctl(gpu, "setForeground", 0xFFFFFF)
+                print("f" .. t .. v)
             else
-                t = "d".. t
-                ioctl(gpu, "set", 1, y, t .. v)
-                -- print(t .. v)
-
-                -- ioctl(gpu, "setForeground", 0x0000F0)
-                -- ioctl(gpu, "set", x, y, v)
-                -- ioctl(gpu, "setForeground", 0xFFFFFF)
+                print("d" .. t .. v)
             end
-            y = y + 1
-            if y > h then
-                ioctl(gpu, "copy", 1, 2, w, h - 1, 0, -1)
-                ioctl(gpu, "fill", 1, h, w, 1, " ")
-                y = y - 1
-            end
+            -- y = y + 1
         end
-        x = 1
+        -- x = 1
         
-
-
-        ioctl(cursor, "set", x, y)
-        fs.close(cursor)
-        -- ioctl(gpu, "bitblt", 0, 1, 1, w, h, buffer, 1, 1)
-        -- local r = ioctl(gpu, "setActiveBuffer", 0)
-        -- ioctl(gpu, "freeBuffer", buffer)
-        fs.close(gpu)
         return 0
     end
 }
