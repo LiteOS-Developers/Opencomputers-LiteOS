@@ -70,6 +70,10 @@ end):start()
 while true do
     for thread, v in pairs(k.threading.threads) do
         if k.threading.threads[thread].stopped then goto continue end
+        if coroutine.status(v.coro) == "dead" then
+            k.threading.threads[thread]:stop()
+            goto continue
+        end
         result = table.pack(coroutine.resume(v.coro))
         if coroutine.status(v.coro) == "dead" then
             k.threading.threads[thread].result = result[2]

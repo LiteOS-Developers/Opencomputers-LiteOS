@@ -149,6 +149,7 @@ k.shell.create = function(pwd, env, name)
         if replacement ~= nil then replacement = replacement:sub(1, 1) end
         msg = msg or ""
         local result = ""
+        local w, h = k.gpu.getResolution()
         k.gpu.set(1, k.screen.y, msg)
         k.screen.x = k.screen.x + msg:len() - 1
         local x = k.screen.x - 1
@@ -170,6 +171,11 @@ k.shell.create = function(pwd, env, name)
             elseif utfChar == "\r" then
                 k.screen.x = 1
                 k.screen.y = k.screen.y + 1
+                if k.screen.y > h then
+                    k.gpu.copy(1, 2, w, h - 1, 0, -1)
+                    k.gpu.fill(1, h, w, 1, " ")
+                    k.screen.y = k.screen.y - 1
+                end
                 return result
             elseif utfChar == "\t" then
                 result = result .. "    "
