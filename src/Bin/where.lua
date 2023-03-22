@@ -3,7 +3,7 @@ local shell = require("Shell")
 
 return {
     main = function(args)
-        local sh = shell.connect("tty")
+        local sh = shell.connect("tty0")
         if #args >= 1 then
             sh:print(sh:resolve(args[1]))
             return 0
