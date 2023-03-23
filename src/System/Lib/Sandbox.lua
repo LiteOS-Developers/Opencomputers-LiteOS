@@ -72,6 +72,7 @@ api.create_env = function(base)
     new.computer = {
         uptime = computer.uptime
     }
+    new.event = deepcopy(k.event)
     local filesystem = k.filesystem
     
     new.filesystem = {
