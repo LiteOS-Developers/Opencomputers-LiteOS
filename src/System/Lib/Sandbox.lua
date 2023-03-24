@@ -73,6 +73,7 @@ api.create_env = function(base)
         uptime = computer.uptime
     }
     new.event = deepcopy(k.event)
+    new.threading = k.threading
     local filesystem = k.filesystem
     
     new.filesystem = {
