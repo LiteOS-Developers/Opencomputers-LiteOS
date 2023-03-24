@@ -154,6 +154,8 @@ k.shell.create = function(pwd, env, name)
         k.screen.x = k.screen.x + msg:len() - 1
         local x = k.screen.x - 1
         local y = k.screen.y
+        k.gpu.setForeground(0xFFFFFF)
+        k.gpu.setBackground(0x000000)
         while true do
             local _, addr, char, code, player = table.unpack(event.pull("key_down"))
             utfChar = utf8.char(char)
