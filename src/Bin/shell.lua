@@ -7,7 +7,13 @@ return {
     main = function(args)
         local sh = shell.connect("tty0")
         sh:setenv("SHELL", "/Bin/shell.lua")
-        local res = sh:auth()
+        -- local res = sh:auth()
+        res = {
+            success = true,
+            home = "/",
+            hostname = "VM1",
+            username = "root"
+        }
         if not res.success then
             sh:print("Not Logged In.")
             return -1
