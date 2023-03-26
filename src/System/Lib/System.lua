@@ -36,7 +36,7 @@ system.executeFile = function(path, env)
             k.panic("Error:".. e)
         end
         
-        res = l()
+        local res = l()
         return res
     end
     error("FileNotFound: " .. path)

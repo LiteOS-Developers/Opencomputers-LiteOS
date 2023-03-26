@@ -25,8 +25,8 @@ local t = function()
         coroutine.yield()
     end
 end
-k.threading.createThread("ProcessDeamon-1", t):start()
-k.threading.createThread("ProcessDeamon-2", t):start()
+-- k.threading.createThread("ProcessDeamon-1", t):start()
+-- k.threading.createThread("ProcessDeamon-2", t):start()
 
 
 local function parseError(...)
@@ -57,9 +57,9 @@ k.threading.createThread("init", function()
     if not sh then
         k.panic(err)
     end
-    while true do
+    -- while true do
         sh:execute("/Bin/shell.lua")
-    end
+    -- end
     -- k.panic(result)
 
 
@@ -75,17 +75,19 @@ while true do
             goto continue
         end
         result = table.pack(coroutine.resume(v.coro))
+        -- k.write(dump(result))
+        if not result[1] then
+            k.panic(dump(result[2]))
+        end
         if coroutine.status(v.coro) == "dead" then
             k.threading.threads[thread].result = result[2]
             k.threading.threads[thread]:stop()
             goto continue
         end
-        if not result[1] then
-            k.panic(dump(result))
-        end
+        
         coroutine.resume(v.coro, table.unpack({k.processSyscall(result)}))
         ::continue::
-        s = table.pack(computer.pullSignal(0.01))
+        local s = table.pack(computer.pullSignal(0.01))
         if s.n > 0 then
             computer.pushSignal(table.unpack(s))
         end

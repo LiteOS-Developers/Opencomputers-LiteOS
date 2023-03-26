@@ -1,17 +1,16 @@
-k.printk(k.L_INFO, "Booting...")
 
-k.printk(k.L_INFO, "Initalizing System Services...")
+-- k.printk(k.L_INFO, "Initalizing System Services...")
+k.printk(k.L_INFO, " - 01_env")
+
 
 k.service = _G.lib.loadfile("/System/Lib/Service.lua")()
 k.system = _G.lib.loadfile("/System/Lib/System.lua")()
 
 
-k.printk(k.L_INFO, "  - Filesystem")
 local err
 k.filesystem, err = k.service.getService("filesystem")
 _G.component = _G.lib.loadfile("/System/Kernel/components.lua")()
 
-k.printk(k.L_INFO, "  - Device management")
 k.gpu = k.devices.gpu
 local dev = k.devices
 k.devfs = k.service.getService("devfs")
@@ -49,6 +48,33 @@ function k.write(msg, newLine)
             k.screen.x = k.screen.x + string.len(msg)
         end
     end
+end
+
+local filesystem = k.filesystem
+_G.dofile = function(path, env)
+    env = env or _G
+    if filesystem.isFile(path) then
+        local file = filesystem.open(path, "r")
+        local data = ""
+        local content
+        repeat
+            content = filesystem.read(file, math.huge)
+            data = data .. (content or "")
+        until not content
+        filesystem.close(file)
+        local _ENV = _G
+        _G = env
+        local l, e = load(data, "=" .. path, "bt", env)
+        if not l then
+            _G = _ENV
+            return nil, e
+        end
+        local res = l()
+        _G = _ENV
+        -- k.write(path .. ": " .. dump(res))
+        return res, nil  
+    end
+    return nil, "File not Found" 
 end
 
 -- k.write("TEST")

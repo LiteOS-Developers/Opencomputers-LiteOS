@@ -1,8 +1,10 @@
-k.printk(k.L_INFO,"Loading components...")
+-- k.printk(k.L_INFO,"Loading components...")
+k.printk(k.L_INFO, " - 11_components")
+
 
 local fs = k.service.getService("filesystem")
 
-datacard = component.list("data")()
+local datacard = component.list("data")()
 if datacard == nil then
     error("No DataCard Avaiable!")
 end
@@ -38,4 +40,4 @@ k.devices.register("ps", {
 -- k.devices.register("events", k.event)
 
 component.register(k.devices.addr, "devfs", k.devices)
-k.printk(k.L_INFO, "Loaded components")
+-- k.printk(k.L_INFO, "Loaded components")

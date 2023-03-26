@@ -24,7 +24,7 @@ event.listen = function(name, func)
 end
 
 event.pull = function(name, timeout)
-    time = computer.uptime() + (timeout or 0.1)
+    local time = computer.uptime() + (timeout or 0.1)
     local signal = nil
     repeat
         signal = table.pack(computer.pullSignal())

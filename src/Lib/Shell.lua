@@ -29,11 +29,11 @@ api.connect = function(tty)
     function sh:execute(file, ...)
         checkArg(1, file, "string")
         local result, err = api.ioctl(device, "execute", file, ...)
-        if err then return -1, err end
+        if not result then return -1, err end
         repeat
             coroutine.yield()
         until result.stopped
-        return result.result
+        return result.result, err
     end
     function sh:auth(username)
         checkArg(1, username, "string", "nil")
@@ -73,7 +73,7 @@ api.connect = function(tty)
             return false
         end
 
-        resp, err = api.ioctl(device, "print", tostring(line))
+        local resp, err = api.ioctl(device, "print", tostring(line))
     end
 
     function sh:read(msg)

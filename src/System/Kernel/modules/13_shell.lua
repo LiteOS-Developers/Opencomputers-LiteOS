@@ -1,4 +1,6 @@
-k.printk(k.L_INFO, "Initializing shell")
+-- k.printk(k.L_INFO, "Initializing shell")
+k.printk(k.L_INFO, " - 13_shell")
+
 local event = require("Event")
 if not event then
     k.panic("Unable to load Event Library")
@@ -25,7 +27,7 @@ k.shell.parseEnv = function(filename)
     k.filesystem.close(file)
 
     data = string.gsub(data, "\r", "")
-    lines = split(data, "\n")
+    local lines = split(data, "\n")
     local env = {}
     for i, line in ipairs(lines) do
         local key = ""
@@ -48,9 +50,9 @@ k.shell.create = function(pwd, env, name)
     checkArg(3, name, "string", "nil")
 
     local sh = {
-        pwd = "/",
         env=env,
     }
+    sh.env.pwd = pwd
     function sh.device()
         return k.devices.register("tty0", sh)
     end
@@ -58,9 +60,9 @@ k.shell.create = function(pwd, env, name)
     function sh.chdir(dir)
         checkArg(1, dir, "string", "nil")
         if dir == nil then
-            return sh.pwd
+            return sh.env.pwd
         end
-        sh.pwd = dir
+        sh.env.pwd = dir 
     end
 
     function sh.getenv(key)
@@ -89,6 +91,7 @@ k.shell.create = function(pwd, env, name)
             if _G.k ~= nil then
                 _ENV.k.panic("Kernel global is not cleared!")
             end
+
             local thread = _ENV.k.threading.createThread(file, function()
                 local f = _ENV.k.system.executeFile(file, env)
                 return f.main(args)
@@ -158,7 +161,7 @@ k.shell.create = function(pwd, env, name)
         k.gpu.setBackground(0x000000)
         while true do
             local _, addr, char, code, player = table.unpack(event.pull("key_down"))
-            utfChar = utf8.char(char)
+            local utfChar = utf8.char(char)
             char = tonumber(tostring(string.format("%.0f", char)))
             if utfChar == "\b" then
                 local oldLen = result:len()

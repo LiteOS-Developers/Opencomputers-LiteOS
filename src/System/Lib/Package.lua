@@ -62,6 +62,7 @@ end
 
 api.addLibraryPath("/Lib/?.lua")
 api.addLibraryPath("/Lib/?/init.lua")
+api.addLibraryPath("/Lib/?/?.lua")
 
 api.require = api.loadPackage
 
