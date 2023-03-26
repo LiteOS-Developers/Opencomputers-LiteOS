@@ -54,9 +54,33 @@ function _G.inTable(t, k)
     return false
 end
 
-keyCode, superKeys = _G.lib.loadfile("/System/keycodes.lua")() -- load keycodes and superkeys
+function deepcopy(orig, copies)
+    copies = copies or {}
+    local orig_type = type(orig)
+    local copy, t
+    if orig_type == 'table' then
+        if copies[orig] then
+            copy = copies[orig]
+        else
+            copy = {}
+            copies[orig] = copy
+            for orig_key, orig_value in next, orig, nil do
+                copy[deepcopy(orig_key, copies)] = deepcopy(orig_value, copies)
+            end
+            t = deepcopy(getmetatable(orig), copies)
+            if type(t) == "table" or type(t) == "nil" then
+                setmetatable(copy, t)
+            end
+        end
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
 
-function _G.getKey()
+-- k.keyCode, k.superKeys = _G.lib.loadfile("/System/keycodes.lua")() -- load keycodes and superkeys
+
+function k.getKey()
     while true do
         local _, addr, char, code, player = table.unpack(event.pull("key_down"))
         local id = tostring(string.format("%.0f", char))
@@ -93,7 +117,4 @@ function _G.rmFloat(n)
     return tostring(string.format("%.0f", n))
 end
 
-_G.write = function(...)
-    error("Called deprecated _G.write: \n" .. debug.traceback())
-end
 return _G

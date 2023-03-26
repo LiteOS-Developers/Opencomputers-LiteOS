@@ -1,36 +1,16 @@
 local api = {}
 
-function deepcopy(orig, copies)
-    copies = copies or {}
-    local orig_type = type(orig)
-    local copy, t
-    if orig_type == 'table' then
-        if copies[orig] then
-            copy = copies[orig]
-        else
-            copy = {}
-            copies[orig] = copy
-            for orig_key, orig_value in next, orig, nil do
-                copy[deepcopy(orig_key, copies)] = deepcopy(orig_value, copies)
-            end
-            t = deepcopy(getmetatable(orig), copies)
-            if type(t) == "table" or type(t) == "nil" then
-                setmetatable(copy, t)
-            end
-        end
-    else -- number, string, boolean, etc
-        copy = orig
-    end
-    return copy
-end
+
 
 local builtins = {}
 
 builtins.syscall = function(call, ...)
+    -- k.write("before")
     local result = table.pack(coroutine.yield("syscall", call, ...))
+    -- k.write("after")
     
     if result[1] ~= "syscall" then
-        k.write(err)
+        k.write(dump({call, ...}))
     end
     table.remove(result, 1)
     coroutine.yield()
@@ -54,23 +34,49 @@ end
 
 
 local blacklist = {
-    component = true, computer = true, k = true, sName=true
+    component = true, computer = true, k = true, sName=true, package = true, s = true, require = true, rmFloat = true, VERSION_INFO = true,
+    scall = true, services = true, tohex = true, getValueFromKey = true, mounts = true, getFirst = true, filesystem = true, inTable = true,
+    lib = true
 }
 
 api.create_env = function(base)
     checkArg(1, base, "table", "nil")
 
-    local new = copyBlacklist(base or _G, blacklist)
+    local new = deepcopy(base or _G)
+    for key, v in pairs(blacklist) do new[key] = nil end
     
     new.load = function(a, b, c, d)
-        return k.load(a, b, c, d or {}) -- k.current_process().env
+        return k.load(a, b, c, d or new) -- k.current_process().env
     end
-    new.error = k.panic
-    new.package = require("Package")
+    new.error = function(l)
+        local info = debug.getinfo(3)
+        t = info.short_src .. ":" .. tostring(info.currentline) .. ": " .. l .. "\n" .. debug.traceback()
+        new.io.stderr:writelines(t)
+        local thread = new.threading.getCurrent()
+        thread:stop()
+        coroutine.yield()
+    end
+    new.print = function(...)
+        new.io.stdout:writelines(...)
+    end
+
+    -- if includePackage then
+    new.dofile = function(path)
+        local res, e = dofile(path, new)
+        if not res then
+            return nil, e
+        end
+        return res
+    end
+    new.package = new.dofile("/Lib/Package.lua")
     new.require = new.package.require
+    -- end
 
     new.computer = {
-        uptime = computer.uptime
+        uptime = computer.uptime,
+        freeMemory = computer.freeMemory,
+        totalMemory = computer.totalMemory,
+        -- freeMemory = computer.freeMemory,
     }
     new.event = deepcopy(k.event)
     new.threading = k.threading
@@ -92,7 +98,6 @@ api.create_env = function(base)
 
     new.scall = k.scall
 
-    new.print = k.write
 
     -- new.coroutine.yield = coroutine.yield
     
