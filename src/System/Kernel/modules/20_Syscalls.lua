@@ -1,3 +1,6 @@
+k.printk(k.L_INFO, " - 20_syscalls")
+
+
 k.syscalls, err = k.service.getService("Syscalls")
 if not k.syscalls then
     error(dump(err))

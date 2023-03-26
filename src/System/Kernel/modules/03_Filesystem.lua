@@ -1,4 +1,6 @@
-k.printk(k.L_INFO, "Mouting filesystems...")
+-- k.printk(k.L_INFO, "Mouting filesystems...")
+k.printk(k.L_INFO, " - 03_filesystem")
+
 
 local drive0 = computer.getBootAddress()
 k.devices.drive0 = component.proxy(drive0)
@@ -17,4 +19,4 @@ for addr, type in pairs(component.list("filesystem")) do
     --filesystem.mount(addr, "/Mount/" .. addr)
 end
 
-k.printk(k.L_INFO, "Mouted filesystems...")
+-- k.printk(k.L_INFO, "Mouted filesystems...")
