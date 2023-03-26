@@ -42,6 +42,7 @@ return {
             end
             exitCode, e = sh:execute(path, arguments)
             coroutine.yield()
+            coroutine.yield()
             if type(exitCode) == "number" then
                 sh:setenv("EXIT", tostring(tonumber(exitCode)))
             else
