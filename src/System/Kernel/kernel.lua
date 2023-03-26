@@ -42,7 +42,8 @@ end
 
 
 k.threading.createThread("init", function()
-
+    local ansi = require("Ansi")
+    ansi.translate("\27[30;47m")
 
     local sandbox = require("Sandbox")
     local env = sandbox.create_env()
