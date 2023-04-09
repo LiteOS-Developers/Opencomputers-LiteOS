@@ -1,24 +1,24 @@
 local api = {}
-
-
-
 local builtins = {}
 
 builtins.syscall = function(call, ...)
     -- k.write("before")
+    -- coroutine.yield()
     local result = table.pack(coroutine.yield("syscall", call, ...))
+    coroutine.yield()
+
     -- k.write("after")
     
     if result[1] ~= "syscall" then
-        k.write(dump({call, ...}))
+        k.write(dump({call, ...}) .. dump(result))
     end
     table.remove(result, 1)
-    coroutine.yield()
     return table.unpack(result)
 end
 
 builtins.ioctl = function(handle, func, ...)
     local v = builtins.syscall("ioctl", handle, func, ...)
+    -- print(dump(v))
     if type(v) ~= "table" then
         return v
     end
@@ -60,6 +60,8 @@ api.create_env = function(base)
         new.io.stdout:writelines(...)
     end
 
+    new.time = k.time
+
     -- if includePackage then
     new.dofile = function(path)
         local res, e = dofile(path, new)
@@ -93,7 +95,8 @@ api.create_env = function(base)
         getLastEdit = filesystem.getLastEdit,
         ensureOpen = filesystem.ensureOpen,
         isFile = filesystem.isFile,
-        isDirectory = filesystem.isDirectory
+        isDirectory = filesystem.isDirectory,
+        remove = filesystem.remove,
     }
 
     new.scall = k.scall
