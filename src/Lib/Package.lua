@@ -15,7 +15,7 @@ package.require = function(name)
         return package.loaded[name]
     end
     if package.loaded[name] ~= nil then
-        return api.loaded[name]
+        return package.loaded[name]
     end
     for _, v in pairs(package.searchPaths) do
         local rPath = v:gsub("?", name)
