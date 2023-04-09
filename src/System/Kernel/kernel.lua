@@ -41,10 +41,7 @@ local function parseError(...)
 end
 
 
-k.threading.createThread("init", function()
-    local ansi = require("Ansi")
-    ansi.translate("\27[30;47m")
-
+k.threading.createThread("init", function() 
     local sandbox = require("Sandbox")
     local env = sandbox.create_env()
     _G.syscall = env.syscall

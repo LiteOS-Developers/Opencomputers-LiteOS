@@ -14,6 +14,8 @@ devfs.create = function()
         checkArg(1, file, "string")
         checkArg(1, mode, "string")
 
+        assert(mode == "r", "Unable to open device in write mode: Not allowed")
+
         local name = string.sub(file, 2, string.len(file))
         local pos = #proxy.handles + 1
         local value = {device=name}
