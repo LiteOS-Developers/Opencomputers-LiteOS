@@ -75,6 +75,24 @@ api.connect = function(tty)
 
         local resp, err = api.ioctl(device, "print", tostring(line))
     end
+    function sh:cursor(x, y, fg, bg)
+        checkArg(1, x, "number")
+        checkArg(2, y, "number")
+        checkArg(3, fg, "number")
+        checkArg(3, bg, "number")
+        local cursor = {
+            x = x,
+            y = y,
+        }
+        cursor.id = api.ioctl(device, "createCursor", x, y, {fg = fg, bg = bg})
+        function cursor:moveTo(x, y)
+            local v = table.pack(api.ioctl(device, "cursorMove", self.id, x, y))
+            cursor.x = x
+            cursor.y = y
+            return table.unpack(v)
+        end
+        return cursor
+    end
 
     function sh:read(msg)
         checkArg(1, msg, "string")

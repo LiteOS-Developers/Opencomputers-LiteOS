@@ -51,6 +51,7 @@ k.shell.create = function(pwd, env, name)
 
     local sh = {
         env=env,
+        cursors = {}
     }
     sh.env.pwd = pwd
     function sh.device()
@@ -149,6 +150,8 @@ k.shell.create = function(pwd, env, name)
     function sh.read(msg, replacement)
         checkArg(1, msg, "string", "nil")
         checkArg(2, replacement, "string", "nil")
+        local ops = {}
+        
         if replacement ~= nil then replacement = replacement:sub(1, 1) end
         msg = msg or ""
         local result = ""
@@ -174,12 +177,14 @@ k.shell.create = function(pwd, env, name)
                 end
                 k.screen.x = x + result:len() + 1
             elseif utfChar == "\r" then
-                k.screen.x = 1
-                k.screen.y = k.screen.y + 1
-                if k.screen.y > h then
-                    k.gpu.copy(1, 2, w, h - 1, 0, -1)
-                    k.gpu.fill(1, h, w, 1, " ")
-                    k.screen.y = k.screen.y - 1
+                if not ops.noNL then 
+                    k.screen.x = 1
+                    k.screen.y = k.screen.y + 1
+                    if k.screen.y > h then
+                        k.gpu.copy(1, 2, w, h - 1, 0, -1)
+                        k.gpu.fill(1, h, w, 1, " ")
+                        k.screen.y = k.screen.y - 1
+                    end
                 end
                 return result
             elseif utfChar == "\t" then
@@ -204,6 +209,42 @@ k.shell.create = function(pwd, env, name)
 
     function sh.setDefault()
         k.devices.mapDevice("tty", sh.name)
+    end
+
+    function sh.createCursor(x, y, color)
+        checkArg(1, x, "number")
+        -- k.panic(dump(y))
+        checkArg(2, y, "number")
+        checkArg(3, color, "table")
+        local cursor = {x = x, y = y, color = color}
+        local char = k.gpu.get(x, y)
+        local fg, fgPallete = k.gpu.setForeground(color.fg)
+        local bg, bgPallete = k.gpu.setBackground(color.bg)
+        k.gpu.set(x, y, char)
+        k.gpu.setForeground(fg, fgPallete)
+        k.gpu.setBackground(bg, bgPallete)
+        sh.cursors[#sh.cursors + 1] = cursor
+        return #sh.cursors
+    end
+
+    function sh.cursorMove(id, x, y)
+        checkArg(1, id, "number")
+        checkArg(2, x, "number")
+        checkArg(3, y, "number")
+        if sh.cursors[id] == nil then return nil, "Cursor does not exists" end
+        local oldx, oldy = sh.cursors[id].x, sh.cursors[id].y
+        sh.cursors[id].x = x
+        sh.cursors[id].y = y
+        local cursor = sh.cursors[id]
+        local char = k.gpu.get(x, y)
+        local fg, fgPallete = k.gpu.setForeground(cursor.color.fg)
+        local bg, bgPallete = k.gpu.setBackground(cursor.color.bg)
+        k.gpu.set(x, y, char)
+        k.gpu.setForeground(fg, fgPallete)
+        k.gpu.setBackground(bg, bgPallete)
+        char = k.gpu.get(oldx, oldy)
+        k.gpu.set(oldx, oldy, char)
+        return true
     end
 
     local id = #k.shell.all
