@@ -17,7 +17,7 @@ function buffer.new(mode, stream)
     for i = 1, unicode.len(mode) do
         result.mode[unicode.sub(mode, i, i)] = true
     end
-    stream.close = setmetatable({close = stream.close,parent = result},{__call = buffer.close})
+    -- stream.close = setmetatable({close = stream.close,parent = result},{__call = buffer.close})
     return setmetatable(result, metatable)
 end
 
@@ -33,8 +33,20 @@ local function readChunk(self)
     end
 end
 
+function buffer:close()
+    if self.mode.w or self.mode.a then
+        self:flush()
+    end
+    self.bufferRead = ""
+    self.closed = true
+    if self.stream.close then
+        return self.stream:close()
+    end
+    return true
+  end
+
 function buffer:flush()
-    if #self.bufferWrite > 0 then
+    if self.mode.w or self.mode.a then
         local tmp = self.bufferWrite
         self.bufferWrite = ""
         local result, reason = self.stream:write(tmp)

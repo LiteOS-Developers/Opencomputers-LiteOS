@@ -23,6 +23,11 @@ io.stderr = require("Buffer").new("w", {
         k.gpu.setForeground(old, _)
     end
 })
+io.stderr:setvbuf("no")
+
+
+k.devices.register("stdout", io.stdout)
+k.devices.register("stderr", io.stderr)
 
 -- print = function(...)
 --     io.stdout:writelines(...)
