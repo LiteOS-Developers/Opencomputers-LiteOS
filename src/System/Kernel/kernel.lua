@@ -64,6 +64,7 @@ k.threading.createThread("init", function()
     _G.syscall, _G.ioctl = nil, nil
 end, 1):start()
 
+local result
 -- thread management (look in /System/Kernel/threading.lua)
 while true do
     for thread, v in pairs(k.threading.threads) do
@@ -82,8 +83,9 @@ while true do
             k.threading.threads[thread]:stop()
             goto continue
         end
-        
-        coroutine.resume(v.coro, table.unpack({k.processSyscall(result)}))
+        -- k.printk(k.L_INFO, dump(result))
+        result = table.pack(coroutine.resume(v.coro, table.unpack({k.processSyscall(result)})))
+        -- k.printk(k.L_WARNING, dump(result))
         ::continue::
         local s = table.pack(computer.pullSignal(0.01))
         if s.n > 0 then
