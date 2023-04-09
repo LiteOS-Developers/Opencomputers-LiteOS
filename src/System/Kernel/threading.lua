@@ -3,6 +3,16 @@ local api = {}
 api.threads = {}
 api.running = nil
 
+api.getCurrent = function()
+    local coro, main = coroutine.running()
+    -- error({coro, main})
+    for pid, t in pairs(api.threads) do
+        if t.coro == coro then
+            return t
+        end
+    end
+end
+
 api.createThread = function(name, func, pid)
     checkArg(1, name, "string")
     checkArg(2, func, "function")

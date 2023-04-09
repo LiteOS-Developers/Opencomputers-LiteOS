@@ -22,11 +22,9 @@ return {
             if string.len(pwd) == 0 then pwd = "/" end
             command = sh:read(host .. ":" .. pwd .. "# ")
             if command:len() == 0 then goto continue end
-            -- print(dump(command))
             
             local arguments = split(command, " ")
             local cmd = arguments[1]
-            local args = select(2, arguments)
             if cmd == nil then
                 sh:print(command .. ": Command not found")
                 goto continue
@@ -36,9 +34,14 @@ return {
                 sh:print(cmd .. ": Command not found: " .. dump(e))
                 goto continue
             end
-            exitCode = sh:execute(path, arguments) or 0
-            
-            sh:setenv("EXIT", tonumber(exitCode))     
+            exitCode, e = sh:execute(path, arguments)
+            coroutine.yield()
+            coroutine.yield()
+            if type(exitCode) == "number" then
+                sh:setenv("EXIT", tostring(tonumber(exitCode)))
+            else
+                sh:setenv("EXIT", tostring(0))
+            end
             ::continue::
         end
         return 0

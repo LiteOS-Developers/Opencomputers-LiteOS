@@ -123,21 +123,26 @@ api.getRealHandle = function(handle)
     checkArg(1, handle, "number")
     return api.handles[handle].handle
 end
-api.open = function(path, mode)
+api.open = function(path, m)
     checkArg(1, path, "string")
-    checkArg(2, mode, "string", "nil")
-    mode = mode or "r"
+    checkArg(2, m, "string", "nil")
+    m = m or "r"
+    local mode = {}
     
     local addr, resPath = getAddrAndPath(path)
     if addr == nil then
         return nil, "No such file or directory: " .. path
     end
-    if not api.isFile(path) then
+    for i = 1, unicode.len(m) do
+        mode[unicode.sub(m, i, i)] = true
+    end
+    if not api.isFile(path) and mode.w ~= true then
         -- error(dump(addr))
         return nil, "Cannot open file: File not existing"
     end
-    local handle = component.invoke(addr, "open", resPath, mode)
-    table.insert(api.handles, {handle = handle, addr = addr, closed=false})
+    
+    local handle = component.invoke(addr, "open", resPath, m)
+    table.insert(api.handles, {handle = handle, addr = addr, closed=false, mode = mode})
     assert(api.ensureOpen(#api.handles), "Handle " .. tostring(#api.handles) .. " (File: " .. path .. ") wasn't opened successfully")
     return #api.handles, nil
 end

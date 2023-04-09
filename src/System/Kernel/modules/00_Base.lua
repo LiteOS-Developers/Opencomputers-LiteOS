@@ -81,6 +81,11 @@ function k.printk(level, fmt, ...)
     -- log_to_buffer(message)
 end
 
+-- k.printk(k.L_INFO, "Booting...")
+k.printk(k.L_INFO, "Loading Modules...")
+k.printk(k.L_INFO, " - 00_Base")
+
+
 function k.scall(func, ...)
     checkArg(1, func, "function")
     local c = coroutine.create(func)

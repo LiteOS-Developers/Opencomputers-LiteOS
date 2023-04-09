@@ -14,6 +14,8 @@ devfs.create = function()
         checkArg(1, file, "string")
         checkArg(1, mode, "string")
 
+        assert(mode == "r", "Unable to open device in write mode: Not allowed")
+
         local name = string.sub(file, 2, string.len(file))
         local pos = #proxy.handles + 1
         local value = {device=name}
@@ -98,14 +100,10 @@ devfs.create = function()
         
 
         if not proxy.ensureOpen(handle) then
-            k.write(tostring(handle) .. " " .. method .. " " .. dump(table.pack(...)) .. " " .. dump(proxy.handles[handle]))
             k.panic("Handle is not open")
             return {}
         end
         local r = table.pack(proxy.devices[proxy.handles[handle].device][method](...))
-        -- k.write(method .. " " .. dump(r))
-
-        -- if not r then k.panic(dump(err)) end
         return r
     end
     proxy.getAPI = function(handle)

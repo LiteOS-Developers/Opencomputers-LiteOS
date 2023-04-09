@@ -1,15 +1,14 @@
 local buffer = {}
 local metatable = {
-    __index = buffer,
-    __metatable = "file"
-  }
+    __index = buffer
+}
 
 function buffer.new(mode, stream)
     local result = {
         closed = false,
         mode = {},
         stream = stream,
-        bufferSize = math.max(512, math.min(8 * 1024, computer.freeMemory() / 8)),
+        bufferSize = math.max(512, math.min(4 * 1024, computer.freeMemory() / 8)),
         readTimeout = math.huge,
         bufferRead = "",
         bufferWrite = "",
@@ -18,11 +17,13 @@ function buffer.new(mode, stream)
     for i = 1, unicode.len(mode) do
         result.mode[unicode.sub(mode, i, i)] = true
     end
-    stream.close = setmetatable({close = stream.close,parent = result},{__call = buffer.close})
+    -- stream.close = setmetatable({close = stream.close,parent = result},{__call = buffer.close})
     return setmetatable(result, metatable)
 end
 
+
 local function readChunk(self)
+    -- error(tostring(math.max(1,self.bufferSize)))
     local result, reason = self.stream:read(math.max(1,self.bufferSize))
     if result then
         self.bufferRead = self.bufferRead .. result
@@ -30,6 +31,61 @@ local function readChunk(self)
     else -- error or eof
         return result, reason
     end
+end
+
+function buffer:close()
+    if self.mode.w or self.mode.a then
+        self:flush()
+    end
+    self.bufferRead = ""
+    self.closed = true
+    if self.stream.close then
+        return self.stream:close()
+    end
+    return true
+  end
+
+function buffer:flush()
+    if self.mode.w or self.mode.a then
+        local tmp = self.bufferWrite
+        self.bufferWrite = ""
+        local result, reason = self.stream:write(tmp)
+        if not result then
+            return nil, reason or "bad file descriptor"
+        end
+    end
+  
+    return self
+end
+
+function buffer:lines()
+    if self.closed then
+        return nil, "Buffer already closed"
+    end
+    if not self.mode.r then
+        return nil, "Buffer not opened for Reading"
+    end
+    self:flush()
+    local data = ""
+    local buf, e
+    repeat
+        buf, e = self.stream:read(math.max(1, self.bufferSize))
+        if not buf and e then
+            return nil, e
+        end
+        data = data .. (buf or "")
+    until buf
+    local lines = {}
+    for _, l in data:gmatch("[^\n]+") do
+        table.insert(lines, l)
+    end
+    local index = 0
+    return setmetatable(lines, {
+        __call = function()
+            index = index + 1
+            return lines[index]
+        end
+    })
 end
 
 function buffer:readLine(chop)
@@ -71,7 +127,7 @@ end
 
 function buffer:seek(offset, whence)
     checkArg(1, offset, "number")
-    assert(math.floor(offset) == offset, "bad argument #2 (not an integer)")
+    assert(math.floor(offset) == offset, "bad argument #1 (not an integer)")
 
     tostring(whence or "cur")
     assert(whence == "set" or whence == "cur" or whence == "end",
@@ -82,7 +138,7 @@ function buffer:seek(offset, whence)
     elseif whence == "cur" then
         offset = offset - #self.bufferRead
     end
-    local result, reason = self.stream:seek(whence, offset)
+    local result, reason = self.stream:seek(offset, whence)
     if result then
         self.bufferRead = ""
         return result
@@ -119,7 +175,7 @@ function buffer:write_buffered(data)
         if l then
             result, reason = self.stream:write(data:sub(1, l))
             if not result then return nil, reason end
-            data = data.sub(l+1)
+            data = data:sub(l+1)
         end
         if #data > self.bufferSize then
             result, reason = self.stream:write(data)
@@ -145,7 +201,16 @@ function buffer:setvbuf(mode, size)
     self.bufferSize = size
   
     return self.bufferMode, self.bufferSize
-  end
+end
+
+function buffer:writelines(...)
+    for k, line in pairs(table.pack(...)) do
+        if k ~= "n" then
+            self:write(tostring(line) .. "\n")
+        end
+    end
+    
+end
 
 function buffer:write(...)
     if self.closed then
@@ -165,11 +230,12 @@ function buffer:write(...)
     for i = 1, args.n do
         local arg = args[i]
         local result, reason
+        arg = arg:gsub("\t", "    ")
 
         if self.bufferMode == "no" then
             result, reason = self.stream:write(arg)
         else
-            result, reason = buffer.buffered_write(self, arg)
+            result, reason = self:write_buffered(arg)
         end
         if not result then
             return nil, reason
@@ -177,3 +243,5 @@ function buffer:write(...)
     end
     return self
 end
+
+return buffer

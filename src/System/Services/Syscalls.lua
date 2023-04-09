@@ -48,7 +48,6 @@ end
 api.ioctl = function(handle, func, ...)
     checkArg(1, handle, "number")
     checkArg(2, func, "string")
-    -- k.write("51: " .. func .. ": " .. dump(k.devices.devices[k.devices.handles[fs.getRealHandle(handle)].device]))
     return k.devices.ioctl(fs.getRealHandle(handle), func, ...)
 end
 api.ensureOpen = function(handle)
