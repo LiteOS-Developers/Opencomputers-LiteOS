@@ -175,6 +175,13 @@ api.listDir = function(dir)
     return files
 end
 
+api.remove = function(path)
+    checkArg(1, path, "string")
+    local addr, resPath = getAddrAndPath(path)
+    return component.invoke(addr, "remove", resPath)
+
+end
+
 api.getFilesize = function(file)
     local addr, resPath = getAddrAndPath(file)
     if not api.isDirectory(resPath) then
