@@ -70,19 +70,16 @@ return {
             local lastEdited = fs.getLastEdit(abs)
             local t = "-rw " .. trunc(tostring(toint(size)), 7) .. " "
             if lastEdited == 0 then
-                t = t .. string.rep(" ", 20) .. " "
-            else
-                t = t .. formatDate(lastEdited/1000) .. " "
+                lastEdited = time()
             end
+            t = t .. formatDate(lastEdited/1000) .. " "
             x = t:len() + 1
             if fs.isFile(abs) then
                 print("f" .. t .. v)
             else
                 print("d" .. t .. v)
             end
-            -- y = y + 1
         end
-        -- x = 1
         
         return 0
     end

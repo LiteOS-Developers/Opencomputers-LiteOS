@@ -18,6 +18,7 @@ return {
         local host = res.username .. "@" .. res.hostname
         local pwd, path, e
         while true do
+            -- coroutine.yield()
             pwd = sh:chdir()
             if string.len(pwd) == 0 then pwd = "/" end
             command = sh:read(host .. ":" .. pwd .. "# ")
@@ -35,8 +36,9 @@ return {
                 goto continue
             end
             exitCode, e = sh:execute(path, arguments)
-            coroutine.yield()
-            coroutine.yield()
+            -- coroutine.yield()
+            -- coroutine.yield()
+            -- coroutine.yield()
             if type(exitCode) == "number" then
                 sh:setenv("EXIT", tostring(tonumber(exitCode)))
             else

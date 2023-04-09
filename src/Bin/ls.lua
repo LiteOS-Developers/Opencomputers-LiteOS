@@ -94,5 +94,6 @@ return {
         x = 1
         ioctl(cursor, "set", x, y)
         fs.close(cursor)
+        coroutine.yield()
     end
 }
