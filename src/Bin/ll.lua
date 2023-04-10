@@ -59,9 +59,13 @@ return {
         if dir == "" then dir = "/" end 
         local size = 0 
         local abs = ""
+        
+        local files, e = fs.listDir(dir)
+        if not files then
+            print(e)
+            return -1
+        end
         shell:print("Contents in " ..dir .. ":")
-
-        local files = fs.listDir(dir)
         files.n = nil
         for _, v in ipairs(files) do
             abs = dir .. "/" .. v
