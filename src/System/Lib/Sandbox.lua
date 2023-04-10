@@ -39,11 +39,22 @@ local blacklist = {
     lib = true
 }
 
-api.create_env = function(base)
-    checkArg(1, base, "table", "nil")
+api.create_env = function(opts)
+    checkArg(1, opts, "table", "nil")
+    opts = opts or {}
+    opts.base = opts.base or _G
 
     local new = deepcopy(base or _G)
     for key, v in pairs(blacklist) do new[key] = nil end
+    local perm_check = false
+    local user
+    if opts.perm_check ~= true then
+        local shell = k.devices.getAPI("tty0")
+        user = shell.user or {}
+        if user.success then
+            perm_check = true
+        end
+    end
     
     new.load = function(a, b, c, d)
         return k.load(a, b, c, d or new) -- k.current_process().env
@@ -83,14 +94,58 @@ api.create_env = function(base)
     new.event = deepcopy(k.event)
     new.threading = k.threading
     local filesystem = k.filesystem
+
+    local function modeTable(m)
+        checkArg(1, m, "string")
+        local mode = {}
+        for i = 1, unicode.len(m) do
+            mode[unicode.sub(m, i, i)] = true
+        end
+        return mode
+    end
+
+    local function checkAttrMode(mode)
+        checkArg(1, mode, "string")
+        assert(mode:len() >= 9, "Expected 'mode' of length 9 got " .. tostring(mode:len()))
+        local result = {}
+        if mode:sub(1, 1) == "r" or mode:sub(7, 7) == "r" then result.r = true end
+        if mode:sub(2, 2) == "w" or mode:sub(8, 8) == "w" then result.w = true end
+        if mode:sub(3, 3) == "x" or mode:sub(9, 9) == "x" then result.x = true end
+        return result
+    end
+    -- TODO: check if user is allowed through group 
     
     new.filesystem = {
-        open = filesystem.open,
+        open = function(path, m)
+            checkArg(1, path, "string")
+            checkArg(2, mode, "string", "nil")
+            local attrs = filesystem.getAttrs(path)
+            m = m or "r"
+            local mode = modeTable(m)
+            if perm_check then
+                if not checkAttrMode(attrs.mode).w and (mode.w or mode.a) then
+                    return nil, path .. ": Unable to open for write File: Not allowed"
+                end
+                if not checkAttrMode(attrs.mode).r and mode.r then
+                    return nil, path .. ": Unable to open for read File: Not allowed"
+                end
+            end
+            return filesystem.open(path, m)
+        end,
         read = filesystem.read,
         write = filesystem.write,
         seek = filesystem.seek,
         close = filesystem.close,
-        listDir = filesystem.listDir,
+        listDir = function(dir)
+            checkArg(1, dir, "string")
+            if dir:sub(-1, -1) == "/" and dir:len() >= 2 then dir = dir:sub(1, -2) end
+            local attrs = filesystem.getAttrs(dir)
+            -- k.write(dir .. " " .. dump(attrs))
+            if attrs.mode ~= nil and not checkAttrMode(attrs.mode).r then
+                return nil, "Unable to list directory: Not allowed"
+            end
+            return filesystem.listDir(dir)
+        end,
         getFilesize = filesystem.getFilesize,
         getLastEdit = filesystem.getLastEdit,
         ensureOpen = filesystem.ensureOpen,

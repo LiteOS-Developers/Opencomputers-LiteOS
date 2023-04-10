@@ -18,7 +18,7 @@ devfs.create = function()
 
         local name = string.sub(file, 2, string.len(file))
         local pos = #proxy.handles + 1
-        local value = {device=name}
+        local value = {device=name, file=file}
         proxy.handles[pos] = value
         -- k.write(dump(pos))
         if pos == 10 then
@@ -85,7 +85,20 @@ devfs.create = function()
         return 0
     end
     proxy.read = function(handle, count)
-        error("Devices doesn't support read")
+        if proxy.handles[handle].file:sub(-5, -1) == ".attr" then
+            proxy.handles[handle].read = (proxy.handles[handle].read or 0) + 1
+            if proxy.handles[handle].read == 1 then
+                return [[
+mode: rw-r--r--
+uid:0
+created:0
+gid:0
+                ]]
+            else
+                return nil -- indicate EOF
+            end
+        end
+        error("Devices doesn't support read: " .. dump(proxy.handles[handle]))
     end
         
     proxy.register = function(name, api)
@@ -107,10 +120,12 @@ devfs.create = function()
         return r
     end
     proxy.getAPI = function(handle)
-        checkArg(1, handle, "number")
-        if not proxy.ensureOpen(handle) then return nil end
-
-        return proxy.devices[proxy.handles[handle].device]
+        checkArg(1, handle, "number", "string")
+        if type(handle) == "number" then
+            if not proxy.ensureOpen(handle) then return nil end
+            return proxy.devices[proxy.handles[handle].device]
+        end
+        return proxy.devices[handle]
     end
 
     -- Maps device {name} to {target} (Creates an Alias {target} for {name})
