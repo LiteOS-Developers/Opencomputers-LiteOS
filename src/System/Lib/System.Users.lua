@@ -23,13 +23,14 @@ api.login = function(user, password)
         
         local splitted = split(v, ":")
 
-        username, hash, home = table.unpack(splitted)
+        uid, username, hash, home = table.unpack(splitted)
         local str = table.unpack(k.devices.ioctl(device, "sha256", password))
         local hashed = tohex(str)
         local result = hashed == hash and username == user
         ret = {result=result}
         if result then
             ret.home = home
+            ret.uid = uid
             return ret
         end
     end
