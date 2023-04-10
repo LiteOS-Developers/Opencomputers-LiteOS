@@ -43,7 +43,9 @@ end
 
 k.threading.createThread("init", function() 
     local sandbox = require("Sandbox")
-    local env = sandbox.create_env()
+    local env = sandbox.create_env({
+        perm_check = false
+    })
     _G.syscall = env.syscall
     _G.ioctl = env.ioctl
 
