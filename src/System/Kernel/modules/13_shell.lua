@@ -119,12 +119,15 @@ k.shell.create = function(pwd, env, name)
             local result = k.users.login(username, password)
             -- k.write(dump(result))
             if result.result then
-                return {
+                local v = {
                     success = true,
                     home = result.home,
                     hostname = hostname,
-                    username = username
+                    username = username,
+                    uid = tonumber(result.uid),
                 }
+                sh.user = v
+                return deepcopy(v)
             else 
                 sh.print("Invalid username or password. Please try again")
                 username = nil
