@@ -47,6 +47,7 @@ devfs.create = function()
     end
     proxy.exists = function(path)
         -- error("exists: " .. dump(proxy.devices[string.sub(path, 2)]))
+        if path:sub(-5) == ".attr" then return true end
         return proxy.devices[string.sub(path, 2)] ~= nil
     end
     proxy.isReadOnly = function()
