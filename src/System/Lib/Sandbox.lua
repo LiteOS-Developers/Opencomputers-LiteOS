@@ -55,9 +55,9 @@ api.create_env = function(opts)
             perm_check = true
         end
     end
-    
+    local loadfile = load
     new.load = function(a, b, c, d)
-        return k.load(a, b, c, d or new) -- k.current_process().env
+        return loadfile(a, b, c, d or new) -- k.current_process().env
     end
     new.error = function(l)
         local info = debug.getinfo(3)
@@ -104,13 +104,15 @@ api.create_env = function(opts)
         return mode
     end
 
-    local function checkAttrMode(mode, useGroup)
-        checkArg(1, mode, "string")
+    function new.checkAttrMode(attrs, useGroup)
+        checkArg(1, attrs, "table")
+        mode = attrs.mode
+        assert(type(mode) == "string", "Bad Argument #1: table is Empty")
         assert(mode:len() >= 9, "Expected 'mode' of length 9 got " .. tostring(mode:len()))
         local result = {}
-        if mode:sub(1, 1) == "r" or mode:sub(7, 7) == "r" then result.r = true end
-        if mode:sub(2, 2) == "w" or mode:sub(8, 8) == "w" then result.w = true end
-        if mode:sub(3, 3) == "x" or mode:sub(9, 9) == "x" then result.x = true end
+        if ((not user.uid or tonumber(attrs.uid) == user.uid) and mode:sub(1, 1) == "r") or mode:sub(7, 7) == "r" then result.r = true end
+        if ((not user.uid or tonumber(attrs.uid) == user.uid) and mode:sub(2, 2) == "w") or mode:sub(8, 8) == "w" then result.w = true end
+        if ((not user.uid or tonumber(attrs.uid) == user.uid) and mode:sub(3, 3) == "x") or mode:sub(9, 9) == "x" then result.x = true end
         if gid ~= nil and user.groups ~= nil then
             new.print(dump(user))
             if user.groups[gid] ~= nil then
@@ -134,10 +136,10 @@ api.create_env = function(opts)
             m = m or "r"
             local mode = modeTable(m)
             if perm_check then
-                if not checkAttrMode(attrs.mode, tonumber(attrs.gid)).w and (mode.w or mode.a) then
+                if not new.checkAttrMode(attrs, tonumber(attrs.gid)).w and (mode.w or mode.a) then
                     return nil, path .. ": Unable to open for write File: Not allowed"
                 end
-                if not checkAttrMode(attrs.mode, tonumber(attrs.gid)).r and mode.r then
+                if not new.checkAttrMode(attrs, tonumber(attrs.gid)).r and mode.r then
                     return nil, path .. ": Unable to open for read File: Not allowed"
                 end
             end
@@ -152,7 +154,7 @@ api.create_env = function(opts)
             if dir:sub(-1, -1) == "/" and dir:len() >= 2 then dir = dir:sub(1, -2) end
             local attrs = filesystem.getAttrs(dir)
             -- k.write(dir .. " " .. dump(attrs))
-            if attrs.mode ~= nil and not checkAttrMode(attrs.mode, tonumber(attrs.gid)).r then
+            if attrs.mode ~= nil and not new.checkAttrMode(attrs, tonumber(attrs.gid)).r then
                 return nil, "Unable to list directory: Not allowed"
             end
             return filesystem.listDir(dir)
@@ -166,7 +168,7 @@ api.create_env = function(opts)
             checkArg(1, dir, "string")
             if dir:sub(-1, -1) == "/" and dir:len() >= 2 then dir = dir:sub(1, -2) end
             local attrs = filesystem.getAttrs(dir)
-            if attrs.mode ~= nil and not checkAttrMode(attrs.mode, tonumber(attrs.gid)).w then
+            if attrs.mode ~= nil and not new.checkAttrMode(attrs, tonumber(attrs.gid)).w then
                 return nil, "Unable to remove file or directory: Not allowed"
             end
             return filesystem.remove(dir)
