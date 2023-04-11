@@ -125,6 +125,7 @@ api.getRealHandle = function(handle)
 end
 api.open = function(path, m)
     checkArg(1, path, "string")
+    
     checkArg(2, m, "string", "nil")
     m = m or "r"
     local mode = {}
@@ -160,7 +161,12 @@ end
 
 api.listDir = function(dir)
     local addr, resPath = getAddrAndPath(dir)
-    local files = component.invoke(addr, "list", resPath)
+    local listed = component.invoke(addr, "list", resPath)
+    local files = {}
+    for _, f in ipairs(listed) do
+        if f:sub(-5, -1) ~= ".attr" then table.insert(files, f) end
+        -- k.write(f)
+    end
     for path, o in pairs(mounts) do
         if o.addr ~= addr then
             local parts = parts(path)
@@ -177,9 +183,47 @@ end
 
 api.remove = function(path)
     checkArg(1, path, "string")
+    if path:sub(-5) == ".attr" then return false end
     local addr, resPath = getAddrAndPath(path)
     return component.invoke(addr, "remove", resPath)
+end
 
+api.getAttrs = function(path, useAlternate)
+    checkArg(1, path, "string")
+    checkArg(2, useAlternate, "boolean", "nil")
+    if useAlternate == nil then useAlternate = true end
+    local addr, resPath = getAddrAndPath(path)
+    
+    -- k.write(path .. ".attr " .. dump(api.isFile(path .. ".attr")))
+    if not api.isFile(path .. ".attr") and useAlternate then
+        return {mode = "rwxr-----", created="1", uid="0", gid="1"}
+    elseif not api.isFile(path .. ".attr") then
+        return {}, "No Attribute file Found"
+    end
+    local handle = component.invoke(addr, "open", resPath .. ".attr", "r")
+    local data = ""
+    local buf
+    repeat
+        buf = component.invoke(addr, "read", handle, math.huge)
+        data = data .. (buf or "")
+    until not buf
+    component.invoke(addr, "close", handle)
+
+    local attrs = string.gmatch(data, "[^\n]+")
+    local parsed = {}
+    local n, kv, key, value
+    while true do
+        n = attrs()
+        if not n then break end
+        kv = string.gmatch(n, "[^:]+")
+        key = kv()
+        value = (kv() or ""):gsub("\r", "")
+        if value:sub(1,1) == " " then value = value:sub(2) end
+        parsed[key] = value
+    end
+    -- k.write(resPath..  ": " .. dump(parsed))
+
+    return parsed
 end
 
 api.getFilesize = function(file)

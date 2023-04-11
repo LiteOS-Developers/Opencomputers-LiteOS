@@ -87,12 +87,19 @@ k.shell.create = function(pwd, env, name)
         if k.filesystem.isFile(file) then
             args = args or {}
             local env = sandbox.create_env()
+            
+            local attrs = k.filesystem.getAttrs(file)
+            if sh.user then
+                if not env.checkAttrMode(attrs, tonumber(attrs.gid)).x then
+                    return nil, "No Allowed"
+                end
+            end
+            
             local _ENV = _G
             _G = env
             if _G.k ~= nil then
                 _ENV.k.panic("Kernel global is not cleared!")
             end
-
             local thread = _ENV.k.threading.createThread(file, function()
                 local f = _ENV.k.system.executeFile(file, env)
                 return f.main(args)
@@ -119,18 +126,25 @@ k.shell.create = function(pwd, env, name)
             local result = k.users.login(username, password)
             -- k.write(dump(result))
             if result.result then
-                return {
+                local v = {
                     success = true,
                     home = result.home,
                     hostname = hostname,
-                    username = username
+                    username = username,
+                    uid = tonumber(result.uid),
                 }
+                sh.user = v
+                return deepcopy(v)
             else 
                 sh.print("Invalid username or password. Please try again")
                 username = nil
                 password = nil
             end
         end
+    end
+
+    function sh.getInfo()
+        return sh.user
     end
 
     function sh.print(line, e)

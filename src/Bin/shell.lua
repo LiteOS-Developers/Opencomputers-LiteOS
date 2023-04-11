@@ -15,9 +15,10 @@ return {
         sh:print("Logged In")
         sh:chdir(res.home)
         
-        local host = res.username .. "@" .. res.hostname
         local pwd, path, e
         while true do
+            res = sh:getInfo()
+            local host = res.username .. "@" .. res.hostname
             -- coroutine.yield()
             pwd = sh:chdir()
             if string.len(pwd) == 0 then pwd = "/" end
@@ -36,6 +37,9 @@ return {
                 goto continue
             end
             exitCode, e = sh:execute(path, arguments)
+            if e ~= nil then
+                print(path .. ": " .. tostring(e))
+            end
             -- coroutine.yield()
             -- coroutine.yield()
             -- coroutine.yield()

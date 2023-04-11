@@ -9,12 +9,19 @@ api.ioctl = ioctl
 api.connect = function(tty)
     checkArg(1, tty, "string")
 
-    local device = filesystem.open("/dev/" .. tty, "r")
+    local device, e = filesystem.open("/dev/" .. tty, "r")
+    if device == nil then
+        error(e)
+    end
     if not filesystem.ensureOpen(device) then
         error("Cannot open device: " .. dump(fs.listDir("/dev"))) 
     end
 
     local sh = {}
+
+    function sh:getInfo()
+        return api.ioctl(device, "getInfo")
+    end
     function sh:chdir(dir)
         checkArg(1, dir, "string", "nil")
         return api.ioctl(device, "chdir", dir)
