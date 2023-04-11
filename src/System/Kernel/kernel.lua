@@ -80,14 +80,17 @@ while true do
         if not result[1] then
             k.panic(dump(result[2]))
         end
+        -- k.write(dump(result))
         if coroutine.status(v.coro) == "dead" then
             k.threading.threads[thread].result = result[2]
             k.threading.threads[thread]:stop()
             goto continue
         end
-        -- k.printk(k.L_INFO, dump(result))
-        result = table.pack(coroutine.resume(v.coro, table.unpack({k.processSyscall(result)})))
-        -- k.printk(k.L_WARNING, dump(result))
+        if result[2] == "syscall" then
+            -- k.printk(k.L_INFO, dump(result))
+            result = table.pack(coroutine.resume(v.coro, table.unpack({k.processSyscall(result)})))
+            -- k.printk(k.L_WARNING, dump(result))
+        end
         ::continue::
         local s = table.pack(computer.pullSignal(0.01))
         if s.n > 0 then
