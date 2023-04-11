@@ -48,7 +48,7 @@ devfs.create = function()
     proxy.exists = function(path)
         -- error("exists: " .. dump(proxy.devices[string.sub(path, 2)]))
         if path:sub(-5) == ".attr" then return true end
-        return proxy.devices[string.sub(path, 2)] ~= nil
+        return proxy.devices[string.sub(path, 2)] ~= nil and proxy.devices[string.sub(path, 2)].api ~= nil
     end
     proxy.isReadOnly = function()
         return true
@@ -90,7 +90,7 @@ devfs.create = function()
             proxy.handles[handle].read = (proxy.handles[handle].read or 0) + 1
             if proxy.handles[handle].read == 1 then
                 return [[
-mode: rw-r--r--
+mode: ]] .. opts.permissions or "r--r--r--" .. [[
 uid:0
 created:0
 gid:0
@@ -101,11 +101,12 @@ gid:0
         end
         error("Devices doesn't support read: " .. dump(proxy.handles[handle]))
     end
-        
-    proxy.register = function(name, api)
+    
+    proxy.register = function(name, api, opts)
         checkArg(1, name, "string")
         checkArg(2, api, "table")
-        proxy.devices[name] = api
+        checkArg(3, opts, "table", "nil")
+        proxy.devices[name] = {api=api, opts=opts or {}}
     end
 
     proxy.ioctl = function(handle, method, ...)
@@ -117,16 +118,16 @@ gid:0
             k.panic("Handle is not open")
             return {}
         end
-        local r = table.pack(proxy.devices[proxy.handles[handle].device][method](...))
+        local r = table.pack(proxy.devices[proxy.handles[handle].device].api[method](...))
         return r
     end
     proxy.getAPI = function(handle)
         checkArg(1, handle, "number", "string")
         if type(handle) == "number" then
             if not proxy.ensureOpen(handle) then return nil end
-            return proxy.devices[proxy.handles[handle].device]
+            return proxy.devices[proxy.handles[handle].device].api
         end
-        return proxy.devices[handle]
+        return proxy.devices[handle].api
     end
 
     -- Maps device {name} to {target} (Creates an Alias {target} for {name})
