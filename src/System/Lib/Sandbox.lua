@@ -47,9 +47,9 @@ api.create_env = function(opts)
     local new = deepcopy(base or _G)
     for key, v in pairs(blacklist) do new[key] = nil end
     local perm_check = false
-    local user
+    local user, shell
     if opts.perm_check ~= true then
-        local shell = k.devices.getAPI("tty0")
+        shell = k.devices.getAPI("tty0")
         user = shell.user or {}
         if user.success then
             perm_check = true
@@ -104,13 +104,21 @@ api.create_env = function(opts)
         return mode
     end
 
-    local function checkAttrMode(mode)
+    local function checkAttrMode(mode, useGroup)
         checkArg(1, mode, "string")
         assert(mode:len() >= 9, "Expected 'mode' of length 9 got " .. tostring(mode:len()))
         local result = {}
         if mode:sub(1, 1) == "r" or mode:sub(7, 7) == "r" then result.r = true end
         if mode:sub(2, 2) == "w" or mode:sub(8, 8) == "w" then result.w = true end
         if mode:sub(3, 3) == "x" or mode:sub(9, 9) == "x" then result.x = true end
+        if gid ~= nil and user.groups ~= nil then
+            new.print(dump(user))
+            if user.groups[gid] ~= nil then
+                if mode:sub(4, 4) == "r" then result.r = true end
+                if mode:sub(5, 5) == "w" then result.w = true end
+                if mode:sub(6, 6) == "x" then result.x = true end
+            end
+        end
         return result
     end
     -- TODO: check if user is allowed through group 
@@ -118,15 +126,18 @@ api.create_env = function(opts)
     new.filesystem = {
         open = function(path, m)
             checkArg(1, path, "string")
+            if path:sub(-5, -1) == ".attr" then
+                return nil, "File Not Allowed"
+            end
             checkArg(2, mode, "string", "nil")
             local attrs = filesystem.getAttrs(path)
             m = m or "r"
             local mode = modeTable(m)
             if perm_check then
-                if not checkAttrMode(attrs.mode).w and (mode.w or mode.a) then
+                if not checkAttrMode(attrs.mode, tonumber(attrs.gid)).w and (mode.w or mode.a) then
                     return nil, path .. ": Unable to open for write File: Not allowed"
                 end
-                if not checkAttrMode(attrs.mode).r and mode.r then
+                if not checkAttrMode(attrs.mode, tonumber(attrs.gid)).r and mode.r then
                     return nil, path .. ": Unable to open for read File: Not allowed"
                 end
             end
@@ -141,7 +152,7 @@ api.create_env = function(opts)
             if dir:sub(-1, -1) == "/" and dir:len() >= 2 then dir = dir:sub(1, -2) end
             local attrs = filesystem.getAttrs(dir)
             -- k.write(dir .. " " .. dump(attrs))
-            if attrs.mode ~= nil and not checkAttrMode(attrs.mode).r then
+            if attrs.mode ~= nil and not checkAttrMode(attrs.mode, tonumber(attrs.gid)).r then
                 return nil, "Unable to list directory: Not allowed"
             end
             return filesystem.listDir(dir)
@@ -151,7 +162,20 @@ api.create_env = function(opts)
         ensureOpen = filesystem.ensureOpen,
         isFile = filesystem.isFile,
         isDirectory = filesystem.isDirectory,
-        remove = filesystem.remove,
+        remove = function(dir)
+            checkArg(1, dir, "string")
+            if dir:sub(-1, -1) == "/" and dir:len() >= 2 then dir = dir:sub(1, -2) end
+            local attrs = filesystem.getAttrs(dir)
+            if attrs.mode ~= nil and not checkAttrMode(attrs.mode, tonumber(attrs.gid)).w then
+                return nil, "Unable to remove file or directory: Not allowed"
+            end
+            return filesystem.remove(dir)
+        end,
+        getAttrs = function(f)
+            checkArg(1, f, "string")
+            if f:sub(-5) == ".attr" then return {}, "File Not Exists" end
+            return filesystem.getAttrs(f)
+        end
     }
 
     new.scall = k.scall
