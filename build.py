@@ -1,5 +1,5 @@
 import os, os.path
-import shutil
+import shutil, sys
 
 base_dir = os.path.join(os.path.dirname(__file__))
 os.chdir(base_dir)
@@ -7,6 +7,14 @@ os.chdir(base_dir)
 
 if not os.path.isdir("build"):
     os.mkdir("build")
+elif not "--rebuild" in sys.argv:
+    raise FileExistsError("Cannot create new build: ")
+    exit(-1)
+else:
+    print("Deleting and recreating build directory\n")
+    if os.path.isdir("build"): shutil.rmtree("build")
+    os.mkdir("build")
+    
 
 def copyDir(d):
     # print(d)
