@@ -196,7 +196,7 @@ api.getAttrs = function(path, useAlternate)
     
     -- k.write(path .. ".attr " .. dump(api.isFile(path .. ".attr")))
     if not api.isFile(path .. ".attr") and useAlternate then
-        return {mode = "rwxr-----", created="1", uid="0", gid="1"}
+        return {mode = "rwxr--r--", created="1", uid="0", gid="1"}
     elseif not api.isFile(path .. ".attr") then
         return {}, "No Attribute file Found"
     end

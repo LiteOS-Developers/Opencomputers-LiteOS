@@ -75,7 +75,8 @@ return {
             local lastEdited = fs.getLastEdit(abs)
             -- print(abs:sub(1, -2))
             -- print(abs .. " " .. dump())
-            local attrs, e = filesystem.getAttrs(abs:sub(1, -2))
+            if abs:sub(-1) == "/" then abs = abs:sub(1, -2) end
+            local attrs, e = filesystem.getAttrs(abs)
             if e then
                 print(abs .. ": " .. dump(e))
             end
