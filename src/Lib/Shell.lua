@@ -18,6 +18,10 @@ api.connect = function(tty)
     end
 
     local sh = {}
+
+    function sh:getInfo()
+        return api.ioctl(device, "getInfo")
+    end
     function sh:chdir(dir)
         checkArg(1, dir, "string", "nil")
         return api.ioctl(device, "chdir", dir)
