@@ -50,7 +50,7 @@ return {
             dir = shell:resolvePath(args[2])
             if not fs.isDirectory(dir) then
                 ioctl(gpu, "setForeground", 0xF00000)
-                shell:print("cd: So such directory: " .. tostring(dir))
+                shell:print("ll: So such directory: " .. tostring(dir))
                 ioctl(gpu, "setForeground", 0xFFFFFF)
                 fs.close(gpu)
                 return
@@ -62,22 +62,29 @@ return {
         
         local files, e = fs.listDir(dir)
         if not files then
-            print(e)
+            print("ll:" .. e)
             return -1
         end
         shell:print("Contents in " ..dir .. ":")
         files.n = nil
+        local abs
         for _, v in ipairs(files) do
             abs = dir .. "/" .. v
             if abs:sub(1, 2) == "//" then abs = abs:sub(2, -1) end
             local size = fs.getFilesize(abs)
             local lastEdited = fs.getLastEdit(abs)
-            local t = "-rw " .. trunc(tostring(toint(size)), 7) .. " "
+            -- print(abs:sub(1, -2))
+            -- print(abs .. " " .. dump())
+            local attrs, e = filesystem.getAttrs(abs:sub(1, -2))
+            if e then
+                print(abs .. ": " .. dump(e))
+            end
+            local t = (attrs.mode or "---------") .. " " .. trunc(tostring(toint(size)), 7) .. " "
             if lastEdited == 0 then
                 lastEdited = time()
             end
             t = t .. formatDate(lastEdited/1000) .. " "
-            x = t:len() + 1
+            -- x = t:len() + 1
             if fs.isFile(abs) then
                 print("f" .. t .. v)
             else

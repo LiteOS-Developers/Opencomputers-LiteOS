@@ -125,6 +125,7 @@ api.getRealHandle = function(handle)
 end
 api.open = function(path, m)
     checkArg(1, path, "string")
+    
     checkArg(2, m, "string", "nil")
     m = m or "r"
     local mode = {}
@@ -187,9 +188,18 @@ api.remove = function(path)
     return component.invoke(addr, "remove", resPath)
 end
 
-api.getAttrs = function(path)
+api.getAttrs = function(path, useAlternate)
     checkArg(1, path, "string")
+    checkArg(2, useAlternate, "boolean", "nil")
+    if useAlternate == nil then useAlternate = true end
     local addr, resPath = getAddrAndPath(path)
+    
+    -- k.write(path .. ".attr " .. dump(api.isFile(path .. ".attr")))
+    if not api.isFile(path .. ".attr") and useAlternate then
+        return {mode = "rwxr-----", created="1", uid="0", gid="1"}
+    elseif not api.isFile(path .. ".attr") then
+        return {}, "No Attribute file Found"
+    end
     local handle = component.invoke(addr, "open", resPath .. ".attr", "r")
     local data = ""
     local buf
