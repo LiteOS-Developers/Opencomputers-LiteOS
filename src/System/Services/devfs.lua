@@ -86,15 +86,20 @@ devfs.create = function()
         return 0
     end
     proxy.read = function(handle, count)
+        checkArg(1, handle, "number")
         if proxy.handles[handle].file:sub(-5, -1) == ".attr" then
             proxy.handles[handle].read = (proxy.handles[handle].read or 0) + 1
             if proxy.handles[handle].read == 1 then
-                return [[
-mode: ]] .. opts.permissions or "r--r--r--" .. [[
+                local device = proxy.devices[proxy.handles[handle].device:sub(1, -6)]
+                if device == nil then k.write(proxy.handles[handle].device) end
+                local permissions = device.opts.permissions
+                return string.format([[
+mode: %s
+    
 uid:0
 created:0
 gid:0
-                ]]
+                ]], permissions or "r--r--r--")
             else
                 return nil -- indicate EOF
             end
