@@ -2,13 +2,9 @@ local api = {}
 local builtins = {}
 
 builtins.syscall = function(call, ...)
-    -- k.write("before")
-    -- coroutine.yield()
     local result = table.pack(coroutine.yield("syscall", call, ...))
     coroutine.yield()
 
-    -- k.write("after")
-    
     if result[1] ~= "syscall" then
         k.write(dump({call, ...}) .. dump(result))
     end
@@ -18,11 +14,9 @@ end
 
 builtins.ioctl = function(handle, func, ...)
     local v = builtins.syscall("ioctl", handle, func, ...)
-    -- print(dump(v))
     if type(v) ~= "table" then
         return v
     end
-    -- k.write(func .. " " .. dump(v))
     return table.unpack(v)
 end
 
@@ -73,7 +67,6 @@ api.create_env = function(opts)
 
     new.time = k.time
 
-    -- if includePackage then
     new.dofile = function(path)
         local res, e = dofile(path, new)
         if not res then
@@ -89,7 +82,6 @@ api.create_env = function(opts)
         uptime = computer.uptime,
         freeMemory = computer.freeMemory,
         totalMemory = computer.totalMemory,
-        -- freeMemory = computer.freeMemory,
     }
     new.event = deepcopy(k.event)
     new.threading = k.threading
@@ -123,8 +115,7 @@ api.create_env = function(opts)
         end
         return result
     end
-    -- TODO: check if user is allowed through group 
-    
+
     new.filesystem = {
         open = function(path, m)
             checkArg(1, path, "string")
@@ -153,7 +144,6 @@ api.create_env = function(opts)
             checkArg(1, dir, "string")
             if dir:sub(-1, -1) == "/" and dir:len() >= 2 then dir = dir:sub(1, -2) end
             local attrs = filesystem.getAttrs(dir)
-            -- k.write(dir .. " " .. dump(attrs))
             if attrs.mode ~= nil and not new.checkAttrMode(attrs, tonumber(attrs.gid)).r then
                 return nil, "Unable to list directory: Not allowed"
             end
@@ -181,37 +171,8 @@ api.create_env = function(opts)
     }
 
     new.scall = k.scall
-
-
-    -- new.coroutine.yield = coroutine.yield
-    
-    --[[new.syscall = function(call, ...)
-        local result, err = new.coroutine.yield("syscall", call, ...)
-        new.print(dump(result))
-        new.print(dump(err))
-        return result
-    end
-    new.ioctl = function(handle, func, ...)
-        return new.syscall("ioctl", handle, func, ...)
-    end]]
     new.syscall = builtins.syscall
     new.ioctl = builtins.ioctl
-
-    --[[ if new.coroutine.resume == coroutine.resume then
-        local resume = new.coroutine.resume
-
-        function new.coroutine.resume(co, ...)
-            local result
-            repeat
-                result = table.pack(resume(co, ...))
-                if result[2] == k.sysyield_string then
-                    yield(k.sysyield_string)
-                end
-            until result[2] ~= k.sysyield_string or not result[1]
-
-            return table.unpack(result, 1, result.n)
-        end
-    end]]
     
     return new
 end
