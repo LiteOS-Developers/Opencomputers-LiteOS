@@ -1,5 +1,6 @@
 local api = {
-    components = {}
+    components = {},
+    names = {}
 }
 local native = component
 
@@ -7,6 +8,16 @@ local function tableMerge(t1, t2)
     local result = t1
     for k, v in pairs(t2) do result[k] = v end
     return result
+end
+
+api.getName = function(addr)
+    return api.names[addr] or addr
+end
+
+api.setName = function(addr, value)
+    checkArg(1, addr, "string")
+    checkArg(2, value, "string")
+    api.names[addr] = value
 end
 
 api.hasMethod = function(addr, method)

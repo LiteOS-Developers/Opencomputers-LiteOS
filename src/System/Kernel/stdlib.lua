@@ -54,6 +54,14 @@ function _G.inTable(t, k)
     return false
 end
 
+table.contains = function(t, val)
+    for _, v in pairs(t) do
+        -- k.write(dump{type(v),type(val)})
+        if v == val then return true end
+    end
+    return false
+end
+
 function deepcopy(orig, copies)
     copies = copies or {}
     local orig_type = type(orig)

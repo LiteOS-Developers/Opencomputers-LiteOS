@@ -66,6 +66,31 @@ k.threading.createThread("init", function()
     _G.syscall, _G.ioctl = nil, nil
 end, 1):start()
 
+-- k.threading.createThread("drive-test", function()
+--     local drives = require("Drives")
+--     addr = component.list("drive")()
+--     component.invoke(addr, "writeSector", 1, string.rep("\0", 512))
+--     component.invoke(addr, "writeSector", 2, string.rep("\0", 512))
+--     component.invoke(addr, "writeSector", 3, string.rep("\0", 512))
+--     drives.createLPT(addr)
+--     drives.createPartition(addr, "boot", 10, 0x01, 3, 1)
+--     drives.createPartition(addr, "data", 30, 0, 13, 1)
+--     drives.createPartition(addr, "cfg", 20, 0, 43, 1)
+--     drives.createPartition(addr, "swap", 15, 0x02, 63, 2)
+--     k.write(dump(drives.getNextFreeSector(addr, 10)))
+-- end, 1)
+
+
+-- k.threading.createThread("init-3", function()
+--     local drives = require("Drives")
+--     addr = component.list("drive")()
+--     -- local parts = drives.read(addr).partitions
+--     -- for _, v in ipairs(parts) do
+--     --     k.write(dump(v))
+--     -- end
+-- end, 1):start()
+
+
 local result
 -- thread management (look in /System/Kernel/threading.lua)
 while true do
@@ -78,7 +103,7 @@ while true do
         result = table.pack(coroutine.resume(v.coro))
         -- k.write(dump(result))
         if not result[1] then
-            k.panic(dump(result[2]))
+            k.write(dump(result[2]))
         end
         -- k.write(dump(result))
         if coroutine.status(v.coro) == "dead" then
