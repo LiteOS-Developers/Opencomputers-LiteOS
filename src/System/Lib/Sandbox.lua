@@ -75,7 +75,13 @@ api.create_env = function(opts)
         return res
     end
     new.package = new.dofile("/Lib/Package.lua")
-    new.require = new.package.require
+    new.require = function(p)
+        local groups = (user or {}).groups or {}
+        if p:sub(1,7):lower() == "system." and table.contains(groups, "0") then
+            return k.package.require(p:sub(8))
+        end
+        return new.package.require(p) 
+    end
     -- end
 
     new.computer = {

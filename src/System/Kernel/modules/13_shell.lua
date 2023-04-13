@@ -131,6 +131,7 @@ k.shell.create = function(pwd, env, name)
                     home = result.home,
                     hostname = hostname,
                     username = username,
+                    groups = result.groups,
                     uid = tonumber(result.uid),
                 }
                 sh.user = v
