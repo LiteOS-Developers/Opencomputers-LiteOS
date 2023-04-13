@@ -1,0 +1,67 @@
+# General
+Endian: Little
+
+# Partition Table Entry
+OFFSET  LENGTH  Description
+
+0       1       Attributes
+                    BIT
+                    0   System Partition (0x01)
+                    1   Hidden           (0x02)
+                    2   Read-Only        (0x04)
+                    4   Binary           (0x10)
+                    5   Allocated (Do not allocate) (0x20)
+1       4       First sector of Partition
+5       1       Partition Number
+6       5       Partition Name (Bytes 0-5)
+11      1       Partition Type
+12      4       Partition Size in sectors
+
+# Sector 0
+START   LENGTH  Description
+0       2       Sector Size (default: \x00\x02)
+2       1       Bootable (1 for bootable 0 otherwise)
+3       4       Total Sector Count (TOTAL_SIZE / SECTOR_SIZE; MUST BE POWER OF 2)
+8       5       String 'LPT0 '
+13      425     Boot code if bootable else filled with 0s
+438     64      Partition Table (first 4 entries; Partitions 0 - 3)
+502     2       Reserved for Future
+504     4       Serial Number for drive
+508     4       Boot signature (\x55\xAA little endian!)
+
+# Sector 1 (Extended Partition Table)
+See `Partition Table Entry`
+Partitions 4 - 35 (32 Entries)
+
+# Sector 2: First Partition
+
+## Part:Sec0 (LiteFS filesystem)
+START   LENGTH  Description
+0       4       Sector Count
+4       16      Full Partition Name
+20      4       Partion Sigature
+24      4       First sector of Root dir (SECTOR_OF_PARTITION + 1)
+28      484     Unused (Fill with 0)
+
+## PART:Sec1 (LiteFS filesystem)
+START   LENGTH  Description
+0       4       Next Sector for same file (or 0xFFFF_FFFF if file end)
+4       1       count of remaining filename letters
+5       ?       More Filename Characters (with extension; with ext-dot) or 0 if not needed
+5+len(off5)     495     File or directory data
+
+## Directory Entry (Length: 32B)
+Offset  LENGTH  Description
+0       1       Attributes
+                    
+                    ReadOnly
+                    System
+                    Hidden
+                    Archive
+                    directory
+1       4       Creation Timestamp (Unix Timestamp)
+5       4       Last Access Timestamp (Unix Timestamp)
+9       4       Sector Count
+13      4       First sector
+17      12      Filename without Extension
+29      3       File extension

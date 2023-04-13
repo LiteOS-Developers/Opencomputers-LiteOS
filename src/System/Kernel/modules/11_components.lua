@@ -26,6 +26,31 @@ k.devices.register("cursor", {
     end 
 })
 
+local drives = {}
+for addr, name in component.list("drive") do
+    table.insert(drives, addr)
+end
+local drive = require("Drives")
+for i, addr in pairs(drives) do
+    k.devices.register("hd" .. tostring(i - 1), component.proxy(addr), {permissions = "r--r-----"})
+    local drivedata = drive.read(addr)
+    for key, value in ipairs(drivedata.partitions) do
+        k.devices.register("hd"  .. tostring(i - 1) .. "p" .. string.format("%.0f", value.partition_number - 1), 
+        {
+            readByte = function(offset) error("Not Implemented") end,
+            writeByte = function(offset, value) error("Not Implemented") end,
+            getSectorSize = function() return drivedata.sector_size end,
+            getLabel = function() return "p" .. string.format("%.0f", value.partition_number - 1) end,
+            setLabel = function(value) error("Not Implemented") end,
+            readByte = function(sector) error("Not Implemented") end,
+            writeByte = function(sector, value) error("Not Implemented") end,
+            getPlatterCount = function() return 1 end,
+            getCapacity = function() return drivedata.partitions[key].size * drivedata.sector_size end
+        })
+    end
+    component.setName(addr, "hd" .. tostring(i - 1))
+end
+
 k.devices.register("ps", {
     list = function()
         local processes = {}
