@@ -33,35 +33,42 @@ START   LENGTH  Description
 See `Partition Table Entry`
 Partitions 4 - 35 (32 Entries)
 
-# Sector 2: First Partition
+# Sector 2: Empty (reserved for future)
+# Sector 3: First Partition
 
 ## Part:Sec0 (LiteFS filesystem)
 START   LENGTH  Description
 0       4       Sector Count
-4       16      Full Partition Name
-20      4       Partion Sigature
-24      4       First sector of Root dir (SECTOR_OF_PARTITION + 1)
+4       16      Reserved
+20      4       Partition Sigature
+24      4       First sector of Root dir (Absolute to drive, SECTOR_OF_PARTITION + 1)
 28      484     Unused (Fill with 0)
 
-## PART:Sec1 (LiteFS filesystem)
+## PART:Sec1 ==> Root directory
+
+## PART:Sec (LiteFS filesystem)
 START   LENGTH  Description
 0       4       Next Sector for same file (or 0xFFFF_FFFF if file end)
-4       1       count of remaining filename letters
-5       ?       More Filename Characters (with extension; with ext-dot) or 0 if not needed
-5+len(off5)     495     File or directory data
+4       4       Creation Timestamp (Unix Timestamp)
+8       1       count of remaining filename letters
+9       ?       More Filename Characters (with extension; with ext-dot) or 0 if not needed
+9+len(off9)     File or directory data
 
 ## Directory Entry (Length: 32B)
 Offset  LENGTH  Description
 0       1       Attributes
-                    
-                    ReadOnly
-                    System
-                    Hidden
-                    Archive
-                    directory
-1       4       Creation Timestamp (Unix Timestamp)
-5       4       Last Access Timestamp (Unix Timestamp)
-9       4       Sector Count
-13      4       First sector
-17      12      Filename without Extension
-29      3       File extension
+                BIT    DISCRIPTION
+                0    ReadOnly
+                1    System
+                2    Hidden
+                3    Archive
+                4    Directory
+                5    Used
+1       4       Last Access Timestamp (Unix Timestamp)
+5       4       File Size in Byte
+9       4       First sector (Releative to parition head, Minimal value: 2)
+13      10      Filename without Extension (filled with spaces)
+23      3       File extension
+26      2       Permissions (binary, 0000000rwxrwxrwx)
+28      2       UID
+30      2       GID
