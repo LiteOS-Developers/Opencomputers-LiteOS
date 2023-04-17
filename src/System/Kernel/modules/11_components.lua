@@ -37,13 +37,20 @@ for i, addr in pairs(drives) do
     for key, value in ipairs(drivedata.partitions) do
         k.devices.register("hd"  .. tostring(i - 1) .. "p" .. string.format("%.0f", value.partition_number - 1), 
         {
-            readByte = function(offset) error("Not Implemented") end,
-            writeByte = function(offset, value) error("Not Implemented") end,
+            readByte = function(offset) 
+                k.write(dump(offset + value.firstSector * drivedata.sector_size))
+                return drive.readUint(addr, offset + value.firstSector * drivedata.sector_size)
+            end,
+            writeByte = function(offset, v) drive.writeUint(addr, offset + value.firstSector * drivedata.sector_size, v & 0xFF) end,
             getSectorSize = function() return drivedata.sector_size end,
             getLabel = function() return "p" .. string.format("%.0f", value.partition_number - 1) end,
             setLabel = function(value) error("Not Implemented") end,
-            readByte = function(sector) error("Not Implemented") end,
-            writeByte = function(sector, value) error("Not Implemented") end,
+            readSector = function(sector) return component.invoke(addr, "readSector", sector + value.firstSector) end,
+            writeSector = function(sector, v)
+                assert(type(v) == "string" and v:len() == drivedata.sector_size, 
+                    "Bad Argument #2. Expected string(" .. tostring(drivedata.sector_size) .. "), got " .. type(v) .. " Value: " .. dump(v))
+                component.invoke(addr, "writeSector", sector + value.firstSector, v)
+            end,
             getPlatterCount = function() return 1 end,
             getCapacity = function() return drivedata.partitions[key].size * drivedata.sector_size end
         })
