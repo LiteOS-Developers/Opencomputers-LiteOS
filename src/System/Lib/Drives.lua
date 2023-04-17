@@ -174,6 +174,16 @@ api.getNameOf = function(addr)
     return component.getName(addr)
 end
 
+api.getAddrOf = function(name)
+    checkArg(1, name, "string")
+    local devices = api.list()
+    for _, addr in pairs(devices) do
+        if api.getNameOf(addr) == name then return addr end
+    end
+    return nil, "No Device Found with that name"
+end
+
+
 api.readPartition = function(addr, off)
     checkArg(1, addr, "string")
     local data = {}
