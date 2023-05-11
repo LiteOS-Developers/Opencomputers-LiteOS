@@ -570,7 +570,7 @@ api.mount = function(device, target)
         local parent, toCreate, e = api.getParent(parts)
         local entry = api.findEntryDeep(device, parent, toCreate)
         if not entry then return 0 end
-        return entry.lastAccess
+        return entry.lastAccess * 1000
     end
 
     comp.list = function(path)
