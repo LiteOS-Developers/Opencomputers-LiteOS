@@ -35,10 +35,9 @@ for i, addr in pairs(drives) do
     k.devices.register("hd" .. tostring(i - 1), component.proxy(addr), {permissions = "r--r-----"})
     local drivedata = drive.read(addr)
     for key, value in ipairs(drivedata.partitions) do
-        k.devices.register("hd"  .. tostring(i - 1) .. "p" .. string.format("%.0f", value.partition_number - 1), 
+        k.devices.register("hd"  .. tostring(i - 1) .. "p" .. string.format("%.0f", value.partition_number), 
         {
             readByte = function(offset) 
-                k.write(dump(offset + value.firstSector * drivedata.sector_size))
                 return drive.readUint(addr, offset + value.firstSector * drivedata.sector_size)
             end,
             writeByte = function(offset, v) drive.writeUint(addr, offset + value.firstSector * drivedata.sector_size, v & 0xFF) end,

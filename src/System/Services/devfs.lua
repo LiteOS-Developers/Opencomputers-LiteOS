@@ -34,7 +34,7 @@ devfs.create = function()
         -- k.write("ensureOpen " .. tostring(tonumber(handle)))
         -- error("1")
         if type(proxy.handles[handle]) ~= "table" then
-            k.write("34 is true " .. dump(handle))
+            k.write("36 is true " .. dump(handle))
             return false
         end 
         return proxy.handles[handle].closed ~= true
@@ -91,7 +91,10 @@ devfs.create = function()
             proxy.handles[handle].read = (proxy.handles[handle].read or 0) + 1
             if proxy.handles[handle].read == 1 then
                 local device = proxy.devices[proxy.handles[handle].device:sub(1, -6)]
-                if device == nil then k.write(proxy.handles[handle].device) end
+                if device == nil then
+                    k.write(proxy.handles[handle].device:sub(1, -6)) 
+                    return nil, "No device Found!"
+                end
                 local permissions = device.opts.permissions
                 return string.format([[
 mode: %s

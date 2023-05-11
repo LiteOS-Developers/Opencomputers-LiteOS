@@ -14,7 +14,7 @@ _G.component = _G.lib.loadfile("/System/Kernel/components.lua")()
 k.gpu = k.devices.gpu
 local dev = k.devices
 k.devfs = k.service.getService("devfs")
-res, err = xpcall(k.devfs.create, debug.traceback)
+local res, err = xpcall(k.devfs.create, debug.traceback)
 if not res then
     k.panic(err)
 end

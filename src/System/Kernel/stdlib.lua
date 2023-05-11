@@ -9,6 +9,7 @@ function _G.dump(o)
         end
         return s .. '} '
     else
+        if type(o) == "string" then return string.format("'%s'", tostring(o)) end
         return tostring(o)
     end
 end
