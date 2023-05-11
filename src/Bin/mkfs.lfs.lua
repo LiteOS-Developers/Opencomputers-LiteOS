@@ -34,6 +34,8 @@ local writeUint2 = function(handle, off, value)
 end
 local writeUint4 = function(handle, off, value)
     checkArg(1, handle, "number")
+    checkArg(2, off, "number")
+    checkArg(3, value, "number")
     writeUint(handle, off, value & 0xFF)
     writeUint(handle, off+1, (value & 0xFF00) >> 8)
     writeUint(handle, off+2, (value & 0xFF0000) >> 16)
@@ -49,71 +51,73 @@ end
 return {
     main = function(args)
         local drives = require("system.Drives")
-        if not drives then
-            print("mkfs.lfs: Requires elevated Rights")
+        local lfs = require("System.lfs")
+
+        if not drives or not lfs then
+            print("mkfs.lfs: Requires elevated Rights or missing libraries")
             return -1
         end
         assert(drives, "FAIL!")
-        local partition = "/dev/hd0p0"
+        local partition = "/dev/hd0p1"
 
         local device, partitionNr = partition:match("/dev/(hd[%d]+)p([%d]+)$")
-        print(device)
-        print(partitionNr)
-
-        local partitions = drives.read(drives.getAddrOf(device)).partitions
-        local current
-        for _, p in pairs(partitions) do
-            if p.partition_number == tonumber(partitionNr) + 1 then
-                current = p
-            end
-        end
-        if not current then
-            print("mkfs.lfs: Partition does not exists!")
-            return -1
-        end
-        if current.type ~= 1 then
-            print("mkfs.lfs: Trying to mkfs.lfs on invalid partition type")
-            return -1
-        end
+                
         -- print(dump(partitions))
         -- if true then return 0 end
 
         local drive, e = filesystem.open(partition)
-        local cursor = filesystem.open("/dev/cursor")
         if not drive then
             print("mkfs.lfs: " .. dump(e))
             return -1
         end
         
-
-        local x, y = ioctl(cursor, "get")
         local sectors = (ioctl(drive, "getCapacity") / ioctl(drive, "getSectorSize"))
         local data = string.rep("\0", 512)
         local start = computer.uptime()
         ioctl(drive, "writeSector", 1, data)
-        writeUint4(drive, 1, sectors)
-        writeUint4(drive, 21, math.random(0x10000000, 0xFFFFFFF0), current.firstSector + 1)
-
-        -- Root directory
-        local currentTime = tonumber(string.format("%.0f", time()/1000))
-        writeUint4(drive, 512+1, 0xFFFFFFFF)
-        writeUint4(drive, 512 + 5, currentTime)
-        writeUint (drive, 512 + 9, 0)
+        lfs.erase(partition)
         
-        -- FileA
-        writeUint(drive, 512 + 10, 1 << 5)
+        local success, e = lfs.createInitial(partition)
+        if not success then
+            print("mkfs.lfs: " .. dump(e))
+            return -1
+        end
+        local currentTime = tonumber(string.format("%.0f", time()/1000))
+        
+        -- DirA
+        writeUint (drive, 512 + 10, 1 << 5 | 1 << 4)
         writeUint4(drive, 512 + 11, currentTime)
         writeUint4(drive, 512 + 15, 0)
         writeUint4(drive, 512 + 19, 2)
-        writeChars(drive, 512 + 23, "FileA     ")
-        writeChars(drive, 512 + 33, "txt")
-        writeUint2(drive, 512 + 35, (1 << 9) - 1)
+        writeChars(drive, 512 + 23, "DirA     ")
+        writeChars(drive, 512 + 33, "   ")
+        writeUint2(drive, 512 + 36, (1 << 9) - 1)
         writeUint2(drive, 512 + 38, 0)
         writeUint2(drive, 512 + 40, 0)
 
+        -- sec 2
         writeUint4(drive, 1024+1, 0xFFFFFFFF)
         writeUint4(drive, 1024+5, currentTime)
         writeUint (drive, 1024+9, 0)
+
+        -- FileA 
+        writeUint (drive, 1024 + 10, 1 << 5)
+        writeUint4(drive, 1024 + 11, currentTime)
+        writeUint4(drive, 1024 + 15, 11)
+        writeUint4(drive, 1024 + 19, 3)
+        writeChars(drive, 1024 + 23, "FileA     ")
+        writeChars(drive, 1024 + 33, "txt")
+        writeUint2(drive, 1024 + 36, (1 << 9) - 1)
+        writeUint2(drive, 1024 + 38, 0)
+        writeUint2(drive, 1024 + 40, 0)
+
+        -- sec 3
+        writeUint4(drive, 1536+1, 0xFFFFFFFF)
+        writeUint4(drive, 1536+5, currentTime)
+        writeUint (drive, 1536+9, 0)
+        writeChars(drive, 1536+10, "Hello world from opencomputers using my own LiteOS filesystem")
+
+    
         
         filesystem.close(drive)
         

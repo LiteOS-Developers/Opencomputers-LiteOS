@@ -217,6 +217,13 @@ api.read = function(addr)
     -- assert(sector_size == 512, tostring(sector_size))
 end
 
+api.getPartitionByNumber = function(addr, number)
+    local data = api.read(addr)
+    for _, v in pairs(data.partitions) do
+        if v.partition_number == number then return v end
+    end
+end
+
 api.createLPT = function(addr)
     checkArg(1, addr, "string")
     -- k.write(addr)
