@@ -400,7 +400,7 @@ api.allocateFreeSector = function(device, path, isDir)
     local sectors = api.getSectors(device, entry.firstSector)
     local free, e = api.findFreeSector(device)
     if free < 0 then return nil, e end
-    k.write(dump(free))
+    k.write("403: " .. dump(free))
     local file, e = open(device)
     if not file then return nil, e end
     local sectorSize = ioctl(file, "getSectorSize")
@@ -480,9 +480,9 @@ api.writeFile = function(device, path, content)
         local data = string.rep("\0", mps)
         writeChars(file, sec*sectorSize+off, data)
         writeChars(file, sec*sectorSize+off, content:sub(1, mps - 3))
-        k.write(dump(content))
+        k.write("483: " .. dump(content))
         content = content:sub(mps - 3)
-        k.write(dump(content:sub(1, mps - 3)))
+        k.write("485: " .. dump(content:sub(1, mps - 3)))
     end
     k.filesystem.close(file)
     -- k.write(dump{maxFileSize, content:len()})
@@ -491,6 +491,8 @@ api.writeFile = function(device, path, content)
 end
 
 api.list = function(device, path)
+    checkArg(1, device, "string")
+    checkArg(2, path, "string")
     local parts = split(path, "/")
     local name = parts[#parts]
     parts[#parts] = nil
@@ -546,31 +548,37 @@ api.mount = function(device, target)
     local sectorSize = ioctl(file, "getSectorSize")
     local data = api.read(device)
 
-    local uuid = require("uuid").next
     local comp = {handles = {}}
     comp.exists = function(path)
         local parts = split(path, "/")
-        local path, toCreate, e = api.getParent(parts)
-        local entry,e = api.findEntryDeep(device, path, toCreate)
+        local parent, toCreate, e = api.getParent(parts)
+        -- k.write(dump(path))
+        local entry,e = api.findEntryDeep(device, parent, toCreate)
         return entry ~= nil, e
     end
 
     comp.isDirectory = function(path)
         local parts = split(path, "/")
-        local path, toCreate, e = api.getParent(parts)
-        local entry = api.findEntryDeep(device, path, toCreate)
+        local parent, toCreate, e = api.getParent(parts)
+        local entry = api.findEntryDeep(device, parent, toCreate)
         if not entry then return false end
         return (entry.attributes & 1<<4) ~= 0
     end
 
     comp.lastModified = function(path)
-        local entry = api.findEntryDeep(device, "/" .. table.concat(parts, "/").. parent, toCreate, true)
+        local parts = split(path, "/")
+        local parent, toCreate, e = api.getParent(parts)
+        local entry = api.findEntryDeep(device, parent, toCreate)
         if not entry then return 0 end
         return entry.lastAccess
     end
 
     comp.list = function(path)
-        return api.list(path)
+        return api.list(device, path)
+    end
+
+    comp.isReadOnly = function()
+        return false
     end
 
     comp.makeDirectory = function(path)
@@ -624,7 +632,7 @@ api.mount = function(device, target)
     comp.spaceTotal = function()
         return k.filesystem.getFilesize(device)
     end
-    comp.size = function(filepath)
+    comp.size = function(path)
         local parts = split(path, "/")
         local path, toCreate, e = api.getParent(parts)
         local entry = api.findEntryDeep(device, path, toCreate)
@@ -632,7 +640,29 @@ api.mount = function(device, target)
         if (entry.attributes & 1<<4) ~= 0 then return 0 end
         return entry.size
     end
-
+    comp.spaceUsed = function()
+        return 0
+    end
+    comp.getLabel = function()
+        return "DevDrive"
+    end
+    comp.setLabel = function(value)
+        error("setLabel not implemented for lfs!")
+    end
+    comp.rename = function(from, to)
+        error("rename not implemented for lfs!")
+    end
+    comp.write = function(handle, data)
+        error("write not implemented for lfs!")
+    end
+    local uuid = require("uuid").next
+    local addr
+    repeat
+        addr = uuid()
+    until not component.exists(addr)
+    component.register(addr, "filesystem", comp)
+    k.filesystem.mount(addr, target)
+    
     return comp
 end
 

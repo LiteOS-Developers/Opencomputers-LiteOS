@@ -68,6 +68,10 @@ api.register = function(addr, type_, calls)
     }
 end
 
+api.exists = function(addr)
+    return component.proxy(addr) ~= nil or api.isVirtual(addr)
+end
+
 api.isVirtual = function(addr)
     return api.components[addr] ~= nil
 end
