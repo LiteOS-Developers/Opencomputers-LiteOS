@@ -527,6 +527,102 @@ api.list = function(device, path)
     end
     return files
 end
+api.getParent = function(parts)
+    if #parts == 0 then return nil, nil, "Invalid Foldername" end
+    local name = parts[#parts]
+    parts[#parts] = nil
+    return  "/" .. table.concat(parts, "/"), name
+end
 
+api.getEntryFast = function(device, path)
+    local parent, name = api.getParent(split(path, "/"))
+    return api.findEntryDeep(device, parent, name)
+
+end
+
+api.mount = function(device, target)
+    local file, e = open(device)
+    if not file then return nil, e end
+    local sectorSize = ioctl(file, "getSectorSize")
+    local data = api.read(device)
+
+    local uuid = require("uuid").next
+    local comp = {handles = {}}
+    comp.exists = function(path)
+        local parts = split(path, "/")
+        local path, toCreate, e = api.getParent(parts)
+        local entry,e = api.findEntryDeep(device, path, toCreate)
+        return entry ~= nil, e
+    end
+
+    comp.isDirectory = function(path)
+        local parts = split(path, "/")
+        local path, toCreate, e = api.getParent(parts)
+        local entry = api.findEntryDeep(device, path, toCreate)
+        if not entry then return false end
+        return (entry.attributes & 1<<4) ~= 0
+    end
+
+    comp.lastModified = function(path)
+        local entry = api.findEntryDeep(device, "/" .. table.concat(parts, "/").. parent, toCreate, true)
+        if not entry then return 0 end
+        return entry.lastAccess
+    end
+
+    comp.list = function(path)
+        return api.list(path)
+    end
+
+    comp.makeDirectory = function(path)
+        local parts = split(path, "/")
+        local _, toCreate, e = api.getParent(parts)
+        if e ~= nil then return nil, e end
+        local parent = ""
+        local partsCopy = deepcopy(parts)
+        if #parts > 0 then
+            parent = parts[#parts]
+            parts[#parts] = nil
+            local entry, e = api.findEntryDeep(device, "/" .. table.concat(parts, "/"), parent, true)
+            if not entry then return nil, e end
+            if (entry.attributes & 1<<4) == 0 then return nil, "Unable to create Folder: Parent is a File" end
+            parent = "/" .. parent
+        end
+        local entry = api.findEntryDeep(device, "/" .. table.concat(parts, "/").. parent, toCreate, true)
+        if entry ~= nil then return nil, "File or Directory Already Exists" end
+
+        local sector = api.findFreeSector(device)
+        local data = string.rep("\0", sectorSize)
+        ioctl(file, "writeSector", sector + 1, data)
+        writeUint4(file, sector*sectorSize + 1, 0xFFFFFFFF)
+        writeUint4(file, sector*sectorSize + 5, tonumber(string.format("%.0f", k.time()/1000)))
+        writeUint(file, sector*sectorSize + 9, 0)
+        local success, e = api.createFileEntry(device, "/" .. table.concat(parts, "/") .. parent, toCreate, {
+            firstSector = sector,
+            attributes = 1 << 4
+        })
+        return success, e
+    end
+    comp.open = function(path, mode)
+        local entry = api.getEntryFast(device, path)
+        if not entry then return nil, "File does not exists" end
+        if comp.isDirectory(path) then return nil, "Cannot open Directory" end
+        local handle = {path = path, mode = mode or "r", pos = 1, entry = entry, closed = false}   
+        comp.handles[#comp.handles+1] = handle
+        return #comp.handles
+    end
+    comp.read = function(handleid, size)
+        local handle = comp.handles[handleid]
+        if not handle then return end
+        if handle.closed then return nil end
+        local content = api.getContent(device, handle.path)
+        return content:sub(handle.pos, handle.pos+(size - 1))
+    end
+
+    comp.close = function(handle)
+        comp.handles[handle] = {closed = true}
+    end
+
+    return comp
+end
 
 return api
