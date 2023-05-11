@@ -41,17 +41,17 @@ START   LENGTH  Description
 0       4       Sector Count
 4       16      Reserved
 20      4       Partition Sigature
-24      4       First sector of Root dir (Absolute to drive, SECTOR_OF_PARTITION + 1)
+24      4       First sector of Root dir (Absolute to drive, normaly SECTOR_OF_PARTITION + 1)
 28      484     Unused (Fill with 0)
 
 ## PART:Sec1 ==> Root directory
 
 ## PART:Sec (LiteFS filesystem)
 START   LENGTH  Description
-0       4       Next Sector for same file (or 0xFFFF_FFFF if file end)
+0       4       Next Sector for same file (or 0xFFFF_FFFF if file end), relative to paritition
 4       4       Creation Timestamp (Unix Timestamp)
-8       1       count of remaining filename letters
-9       ?       More Filename Characters (with extension; with ext-dot) or 0 if not needed
+8       1       count of remaining filename letters only at first sector. For the root directory this is always 0
+9       ?       More Filename Characters (with extension; with ext-dot) if off8 is 0 then this doesn't exists (jump to next one)
 9+len(off9)     File or directory data
 
 ## Directory Entry (Length: 32B)
@@ -66,7 +66,7 @@ Offset  LENGTH  Description
                 5    Used
 1       4       Last Access Timestamp (Unix Timestamp)
 5       4       File Size in Byte
-9       4       First sector (Releative to parition head, Minimal value: 2)
+9       4       First sector (Releative to partition head, Minimal value: 2)
 13      10      Filename without Extension (filled with spaces)
 23      3       File extension
 26      2       Permissions (binary, 0000000rwxrwxrwx)
