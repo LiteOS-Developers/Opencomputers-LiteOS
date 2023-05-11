@@ -32,7 +32,7 @@ for addr, name in component.list("drive") do
 end
 local drive = require("Drives")
 for i, addr in pairs(drives) do
-    k.devices.register("hd" .. tostring(i - 1), component.proxy(addr), {permissions = "r--r-----"})
+    k.devices.register("hd" .. tostring(i - 1), component.proxy(addr), {permissions = "r--r-----", size = component.invoke(addr, "getCapacity")})
     local drivedata = drive.read(addr)
     for key, value in ipairs(drivedata.partitions) do
         k.devices.register("hd"  .. tostring(i - 1) .. "p" .. string.format("%.0f", value.partition_number), 
@@ -52,7 +52,7 @@ for i, addr in pairs(drives) do
             end,
             getPlatterCount = function() return 1 end,
             getCapacity = function() return drivedata.partitions[key].size * drivedata.sector_size end
-        })
+        }, {size = drivedata.partitions[key].size * drivedata.sector_size})
     end
     component.setName(addr, "hd" .. tostring(i - 1))
 end

@@ -621,6 +621,17 @@ api.mount = function(device, target)
     comp.close = function(handle)
         comp.handles[handle] = {closed = true}
     end
+    comp.spaceTotal = function()
+        return k.filesystem.getFilesize(device)
+    end
+    comp.size = function(filepath)
+        local parts = split(path, "/")
+        local path, toCreate, e = api.getParent(parts)
+        local entry = api.findEntryDeep(device, path, toCreate)
+        if not entry then return 0, "File does not exists" end
+        if (entry.attributes & 1<<4) ~= 0 then return 0 end
+        return entry.size
+    end
 
     return comp
 end

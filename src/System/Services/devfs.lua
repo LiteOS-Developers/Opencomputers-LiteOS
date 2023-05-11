@@ -82,8 +82,9 @@ devfs.create = function()
             proxy.handles[handle].closed = true
         end
     end
-    proxy.size = function()
-        return 0
+    proxy.size = function(filepath)
+        checkArg(1, filepath, "string")
+        return (proxy.devices[filepath:sub(2)].opts or {}).size or 0
     end
     proxy.read = function(handle, count)
         checkArg(1, handle, "number")
