@@ -1,6 +1,6 @@
 return {
     main = function(args)
-        local lfs = require("System.lfs")
+        local lfs = require("System.lfs/drive")
         
         -- -- print(dump(lfs.read("/dev/hd0p1")))
         -- -- print(dump(lfs.findFreeEntry("/dev/hd0p1", "/")))
