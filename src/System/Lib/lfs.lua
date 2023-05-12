@@ -1,4 +1,6 @@
-local api = {}
+local api = {
+    data = {}
+}
 
 local ioctl = function(handle, ...) 
     return table.unpack(k.devices.ioctl(k.filesystem.getRealHandle(handle), ...))
@@ -106,6 +108,7 @@ local readChars = function(handle, off, count)
     return str
 end
 
+
 api.erase = function(device)
     local drive,e = open(device)
     if not drive then return false, e end
@@ -117,7 +120,10 @@ end
 
 api.read = function(base)
     checkArg(1, base, "string")
+    
     local device, partitionNr = base:match("/dev/(hd[%d]+)p([%d]+)$")
+    if not device then return false, "Device not found" end
+    if api.data[base] then return api.data[base].data end
     local partition = drives.getPartitionByNumber(drives.getAddrOf(device), tonumber(partitionNr))
     local diskInfo = drives.read(drives.getAddrOf(device))
     
@@ -137,6 +143,7 @@ api.read = function(base)
     
     data.rootDirSectors = api.getSectors(devicename, data.rootDirOff)
     data.rootDirEntries = api.getEntries(devicename, data.rootDirSectors)
+    api.data[base] = {data = data, files = {}}
     return data
 end
 
@@ -272,6 +279,11 @@ api.findEntryDeep = function(device, parent, filename, isDir)
     end
     local parts = split(parent, "/")
     local data, e = api.read(device)
+    if api.data[device] then
+        if api.data[device].files[parent .. "/" .. filename] then
+            return api.data[device].files[parent .. "/" .. filename]
+        end
+    end
     
     local sectors = data.rootDirSectors
     for i = 1, #parts do
@@ -295,7 +307,12 @@ api.findEntryDeep = function(device, parent, filename, isDir)
             return nil, "Same entry with two extensions!" 
         end
     end
+    api.data[device].files[parent .. "/" .. filename] = entry
     return entry -- FIXME: check if there is a file with same name but diffrent ext
+end
+
+api.free = function(device)
+    api.data[device] = nil
 end
 
 api.getContent = function(device, path)
@@ -543,6 +560,8 @@ api.getEntryFast = function(device, path)
 end
 
 api.mount = function(device, target)
+    checkArg(1, device, "string")
+    checkArg(2, target, "string", "nil")
     local file, e = open(device)
     if not file then return nil, e end
     local sectorSize = ioctl(file, "getSectorSize")
@@ -661,7 +680,9 @@ api.mount = function(device, target)
         addr = uuid()
     until not component.exists(addr)
     component.register(addr, "filesystem", comp)
-    k.filesystem.mount(addr, target)
+    if target then
+        k.filesystem.mount(addr, target)
+    end
     
     return comp
 end

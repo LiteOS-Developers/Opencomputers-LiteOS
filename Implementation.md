@@ -1,7 +1,7 @@
 ## ToDos
 ___
-* [ ] Caching found directories
-* [ ] Performance Boost
+* [x] Caching
+* [x] Performance Boost
 * [ ] Implement missing functions
   - [ ] spaceUsed
   - [ ] write
