@@ -1,5 +1,5 @@
 ## ToDos
-___
+
 * [x] Caching
 * [x] Performance Boost
 * [ ] Implement missing functions
@@ -11,7 +11,7 @@ ___
 
 ___
 ## Implemented Filesystem Component Functions 
-___
+Strike-through means implemented
 ### **spaceUsed():number** <br>
 The currently used capacity of the file system, in bytes. <br>
 ### ~~open(path:string[, mode:string='r']):number~~ <br>
