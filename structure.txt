@@ -42,7 +42,8 @@ START   LENGTH  Description
 4       16      Reserved
 20      4       Partition Sigature
 24      4       First sector of Root dir (Absolute to drive, normaly SECTOR_OF_PARTITION + 1)
-28      484     Unused (Fill with 0)
+28      16      Filesystem Label (default filled with spaces)
+44      468     Unused (Fill with 0)
 
 ## PART:Sec1 ==> Root directory
 

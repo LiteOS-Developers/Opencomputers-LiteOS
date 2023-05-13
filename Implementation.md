@@ -7,8 +7,8 @@
   - [ ] spaceUsed
   - [ ] write
   - [ ] rename
-  - [ ] getLabel
-  - [ ] setLabel
+  - [x] getLabel
+  - [x] setLabel
 
 ___
 ## Implemented Filesystem Component Functions 
@@ -37,7 +37,7 @@ Renames/moves an object from the first specified absolute path in the file syste
 Returns a list of names of objects in the directory at the specified absolute path in the file system. <br>
 ### ~~lastModified(path:string):number~~ <br>
 Returns the (real world) timestamp of when the object at the specified absolute path in the file system was modified. <br>
-### **getLabel():string** <br>
+### ~~getLabel():string~~ <br>
 Get the current label of the file system. <br>
 remove(path:string):boolean <br>
 Removes the object at the specified absolute path in the file system. <br>
@@ -47,5 +47,5 @@ Closes an open file descriptor with the specified handle. <br>
 Returns the size of the object at the specified absolute path in the file system. <br>
 ### ~~read(handle:number, count:number):string or nil~~ <br>
 Reads up to the specified amount of data from an open file descriptor with the specified handle. Returns nil when EOF is reached. <br>
-### **setLabel(value:string):string** <br>
+### ~~setLabel(value:string):string~~ <br>
 Sets the label of the file system. Returns the new value, which may be truncated. <br>

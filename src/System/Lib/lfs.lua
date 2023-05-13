@@ -165,6 +165,7 @@ api.read = function(base)
     data.sectorCount = readUint4(file, 1)
     data.signature = readUint4(file, 21)
     data.rootDirStart = readUint4(file, 25)
+    data.label = readChars(file, 29, 16)
     data.rootDirOff = data.rootDirStart - partition.firstSector
     
     data.rootDirSectors = api.getSectors(devicename, data.rootDirOff)
@@ -254,6 +255,7 @@ api.createInitial = function(device)
     writeUint4(drive, 1, sectors)
     writeUint4(drive, 21, math.random(0x10000000, 0xFFFFFFF0))
     writeUint4(drive, 25, current.firstSector + 1)
+    writeChars(drive, 29, string.rep(" ", 16))
 
     -- Root directory
     local currentTime = tonumber(string.format("%.0f", k.time()/1000))
@@ -690,10 +692,11 @@ api.mount = function(device, target)
         return 0
     end
     comp.getLabel = function()
-        return "DevDrive"
+        return trim(data.label)
     end
     comp.setLabel = function(value)
-        error("setLabel not implemented for lfs!")
+        writeChars(drive, 29, trunc(value:sub(1, 16), 16))
+        return value:sub(1, 16)
     end
     comp.rename = function(from, to)
         error("rename not implemented for lfs!")
