@@ -1,9 +1,15 @@
 local api = {
-    data = {}
+    data = {},
+    handles = {}
 }
 
-local ioctl = function(handle, ...) 
-    return table.unpack(k.devices.ioctl(k.filesystem.getRealHandle(handle), ...))
+local _k = {
+    invoke = k.devices.ioctl
+}
+local ioctl = function(handle, func, ...) 
+    local f = api.handles[handle][func]
+    assert(f, string.format("No Callback for '%s' found", func))
+    return f(...)
 end
 
 local drives = require("Drives")
@@ -21,6 +27,9 @@ end
 
 local function open(base)
     local device, partitionNr = base:match("/dev/(hd[%d]+)p([%d]+)$")
+    if not device then
+        return nil, "Unsupported Type!"
+    end
     local partition = drives.getPartitionByNumber(drives.getAddrOf(device), tonumber(partitionNr))
     local diskInfo = drives.read(drives.getAddrOf(device))
     if not partition then
@@ -31,6 +40,24 @@ local function open(base)
     if not file then
         return nil, e
     end
+    local realHandle = k.filesystem.getRealHandle(file)
+    api.handles[file] = {
+        readUint = function(off)
+            return string.unpack("B", string.pack("B", _k.invoke(realHandle, "readByte", off)[1] & 0xFF))
+        end,
+        writeUint = function(off, value)
+            _k.invoke(realHandle, "writeByte", off, value & 0xFF)
+        end,
+        readSector = function(sector)
+            return _k.invoke(realHandle, "readSector", sector)[1]
+        end,
+        writeSector = function(sector, value)
+            _k.invoke(realHandle, "writeSector", sector, value)
+        end,
+        getSectorSize = function()
+            return 512 -- FIXME:
+        end
+    }
     return file
 end
 local function max(max, v) 
@@ -53,11 +80,11 @@ local function trunc(str, len)
     return str
 end
 local writeUint = function(handle, off, value)
-    checkArg(1, handle, "number")
     checkArg(2, off, "number")
     checkArg(3, value, "number")
-    return ioctl(handle, "writeByte", off, value & 0xFF)
+    ioctl(handle, "writeUint", off, value)
 end
+
 
 local writeUint2 = function(handle, off, value)
     checkArg(1, handle, "number")
@@ -79,9 +106,8 @@ local writeChars = function(handle, off, value)
 end
 
 local readUint = function(handle, off)
-    checkArg(1, handle, "number")
     checkArg(2, off, "number")
-    return string.unpack("B", string.pack("B", ioctl(handle, "readByte", off) & 0xFF))
+    return ioctl(handle, "readUint", off)
 end
 
 local readUint2 = function(handle, off, value)
@@ -131,7 +157,7 @@ api.read = function(base)
         return nil, "Partition does not exists"
     end
     local devicename = string.format("/dev/%sp%d", device, partitionNr)
-    local file, e = k.filesystem.open(devicename)
+    local file, e = open(devicename)
     if not file then
         return nil, e
     end
@@ -157,7 +183,7 @@ api.getSectors = function(base, begin)
     if not partition then
         return nil, "Partition does not exists"
     end
-    local file, e = k.filesystem.open(string.format("/dev/%sp%d", device, partitionNr))
+    local file, e = open(string.format("/dev/%sp%d", device, partitionNr))
     if not file then
         return nil, e
     end
@@ -184,7 +210,7 @@ api.getEntries = function(base, sectors)
     if not partition then
         return nil, "Partition does not exists"
     end
-    local file, e = k.filesystem.open(string.format("/dev/%sp%d", device, partitionNr))
+    local file, e = open(string.format("/dev/%sp%d", device, partitionNr))
     if not file then
         return nil, e
     end
@@ -216,7 +242,7 @@ api.getEntries = function(base, sectors)
 end
 
 api.createInitial = function(device)
-    local drive,e = k.filesystem.open(device)
+    local drive,e = open(device)
     if not drive then return false, e end
     local d, partitionNr = device:match("/dev/(hd[%d]+)p([%d]+)$")
     local current = drives.getPartitionByNumber(drives.getAddrOf(d), tonumber(partitionNr))
@@ -333,6 +359,7 @@ api.getContent = function(device, path)
         local data = ioctl(file, "readSector", sectors[i] + 1)
         local fullFNCount = 0
         if i == 1 then
+            assert(type(data) == "string", string.format("366: type(data) = %s", dump(data)))
             fullFNCount = string.unpack("B", string.pack("B", string.byte(data:sub(9, 9))))
             local fullFN = data:sub(10, 10+fullFNCount)
             if fullFN ~= name and fullFNCount > 0 then
