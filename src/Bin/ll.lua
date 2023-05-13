@@ -65,6 +65,7 @@ return {
             print("ll:" .. e)
             return -1
         end
+        table.sort(files)
         shell:print("Contents in " ..dir .. ":")
         files.n = nil
         local abs
@@ -80,16 +81,17 @@ return {
             if e then
                 print(abs .. ": " .. dump(e))
             end
-            local t = (attrs.mode or "---------") .. " " .. trunc(tostring(toint(size)), 7) .. " "
+            --local t = (attrs.mode or "---------") .. " " .. trunc(tostring(toint(size)), 7) .. " "
             if lastEdited == 0 then
                 lastEdited = time()
             end
-            t = t .. formatDate(lastEdited/1000) .. " "
+            --t = t .. formatDate(lastEdited/1000) .. " "
+            local t = string.format("%s %s %s %s", attrs.mode or "---------", trunc(string.format("%.0f", size), 7), formatDate(lastEdited/1000), v)
             -- x = t:len() + 1
             if fs.isFile(abs) then
-                print("f" .. t .. v)
+                print("f" .. t)
             else
-                print("d" .. t .. v)
+                print("d" .. t)
             end
         end
         

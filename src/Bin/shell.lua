@@ -40,7 +40,7 @@ return {
             if e ~= nil then
                 print(path .. ": " .. tostring(e))
             end
-            -- coroutine.yield()
+            coroutine.yield()
             -- coroutine.yield()
             -- coroutine.yield()
             if type(exitCode) == "number" then

@@ -53,34 +53,5 @@ end
 api.ensureOpen = function(handle)
     return fs.ensureOpen(handle)
 end
---[[
-api.getDevice = function(name)
-    -- _G.write("getDevice(" .. name .. "): " .. dump(_G.devices[name]))
-    local handle, err = fs.open("/dev/" .. name, "r")
-    if handle == nil then return {} end
-    return _G.devices.getAPI(handle)
-end
-api.addDevice = function(args)
-    _G.devices.register(args[1], args[2])
-end
-api.mapDevice = function(args)
-    -- _G.write(dump(args))
-    checkArg(1, args[1], "string")
-    checkArg(2, args[2], "string")
-    
-    _G.devices.register(args[2], _G.devices[args[1])
-    
-    end
-]]
-api.filterDevices = function(name)
-    local length = string.len(name)
-    local result = {}
-    for i, n in pairs(table.keys(_G.devices.devices)) do
-        if n:sub(1, length) == name then
-            table.insert(result, n)
-        end
-    end
-    return table.pack(result)
-end
 
 return api

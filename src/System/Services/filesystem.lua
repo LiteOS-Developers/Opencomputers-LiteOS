@@ -86,6 +86,7 @@ api.isFile = function(path)
         -- error(path .. " " .. dump(mounts))
         error(debug.traceback())
     end
+    if api.isMount(path) then return false end
     return component.invoke(addr, "exists", resPath) and not component.invoke(addr, "isDirectory", resPath)
 end
 
@@ -93,7 +94,8 @@ api.isDirectory = function(path)
     checkArg(1, path, "string")
     
     local addr, resPath = getAddrAndPath(path)
-    return (component.invoke(addr, "exists", resPath) and component.invoke(addr, "isDirectory", resPath)) or api.isMount(path)
+    if api.isMount(path) then return true end
+    return (component.invoke(addr, "exists", resPath) and component.invoke(addr, "isDirectory", resPath))
 end
 
 api.read = function(handle, size)

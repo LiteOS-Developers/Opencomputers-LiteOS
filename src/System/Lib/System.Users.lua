@@ -58,7 +58,8 @@ api.login = function(user, password)
         local result = hashed == hash and username == user
         ret = {result=result}
         if result then
-            ret.groups = filterTable(api.readGroups(), split(groups, ","))
+            -- ret.group = filterTable(api.readGroups(), )
+            ret.groups = split(groups, ",")
             ret.home = home
             ret.uid = uid
             return ret
