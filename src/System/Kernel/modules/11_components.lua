@@ -35,6 +35,7 @@ for i, addr in pairs(drives) do
     k.devices.register("hd" .. tostring(i - 1), component.proxy(addr), {permissions = "r--r-----", size = component.invoke(addr, "getCapacity")})
     local drivedata = drive.read(addr)
     for key, value in ipairs(drivedata.partitions) do
+        -- TODO: only allow read and write from sectors of the partition
         k.devices.register("hd"  .. tostring(i - 1) .. "p" .. string.format("%.0f", value.partition_number), 
         {
             readByte = function(offset) 
