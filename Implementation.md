@@ -2,6 +2,7 @@
 
 * [x] Caching
 * [x] Performance Boost
+* [x] Modularity (allow for later .app or .lib files)
 * [ ] Implement missing functions
   - [ ] spaceUsed
   - [ ] write
