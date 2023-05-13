@@ -662,12 +662,20 @@ api.mount = function(device, target)
         local entry = api.getEntryFast(device, path)
         if not entry then return nil, "File does not exists" end
         if comp.isDirectory(path) then return nil, "Cannot open Directory" end
-        local handle = {path = path, mode = mode or "r", pos = 1, entry = entry, closed = false}   
+        mode = mode or "r"
+        local modes = {}
+        for i = 1, unicode.len(mode) do
+            modes[unicode.sub(mode, i, i)] = true
+        end
+        local handle = {path = path, mode = modes, pos = 1, entry = entry, closed = false}   
         comp.handles[#comp.handles+1] = handle
         return #comp.handles
     end
     comp.read = function(handleid, size)
         local handle = comp.handles[handleid]
+        if not handle.mode.r then
+            return nil, "File is not opened for reading"
+        end
         if not handle then return end
         if handle.closed then return nil end
         local content = api.getContent(device, handle.path)
