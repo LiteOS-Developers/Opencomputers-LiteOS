@@ -48,21 +48,25 @@ event.pull = function(name, timeout)
 end
 
 event.fetch = function(timeout)
-    time = computer.uptime() + (timeout or 0.1)
+    time = computer.uptime() + (timeout or 0)
     local signal = nil
     repeat
-        signal = table.pack(computer.pullSignal())
-        -- writeLog("Event: " .. signal[1])
-        if _G.eventListeners[signal[1]] ~= nil then
-            for _, handler in pairs(_G.eventListeners[signal[1]]) do
-                if handler.event == signal[1] then
-                    -- writeLog("Handler: " .. handler.event .. " Func: " .. tostring(handler.func))
-                    handler.func(table.unpack(signal, 1, signal.n))
+        signal = table.pack(computer.pullSignal(0))
+        -- k.write(dump(signal))
+        if signal.n > 0 then
+            -- k.write("Event: " .. signal[1])
+            if _G.eventListeners[signal[1]] ~= nil then
+                for _, handler in pairs(_G.eventListeners[signal[1]]) do
+                    if handler.event == signal[1] then
+                        handler.func(table.unpack(signal, 1, signal.n))
+                    end
                 end
             end
         end
+        if computer.uptime() >= time then break end
         coroutine.yield()
     until computer.uptime() >= time
 end
+
 
 return event

@@ -71,10 +71,7 @@ _G.dofile = function(path, env)
         end
         local res = l()
         _G = _ENV
-        -- k.write(path .. ": " .. dump(res))
         return res, nil  
     end
     return nil, "File not Found" 
 end
-
--- k.write("TEST")
