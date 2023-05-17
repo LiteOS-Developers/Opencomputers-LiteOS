@@ -11,6 +11,7 @@ _G.VERSION_INFO.release = "dev"
 
 k = {}
 lib.loadfile("/System/bin/init.lua")()
+
 computer.pullSignal(0)
 local result
 local event = require("Event")

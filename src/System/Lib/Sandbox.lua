@@ -28,9 +28,8 @@ end
 
 
 local blacklist = {
-    component = true, computer = true, k = true, sName=true, package = true, s = true, require = true, rmFloat = true, VERSION_INFO = true,
-    scall = true, services = true, tohex = true, getValueFromKey = true, mounts = true, getFirst = true, filesystem = true, inTable = true,
-    lib = true
+    component = true, computer = true, k = true, sName=true, package = true, s = true, require = true, VERSION_INFO = true,
+    scall = true, services = true, tohex = true, mounts = true, filesystem = true, lib = true
 }
 
 api.create_env = function(opts)

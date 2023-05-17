@@ -48,14 +48,14 @@ api.list = function(filter, exact)
 end
 
 api.proxy = function(addr)
-    if inTable(api.components, addr ) then
+    if table.contains(api.components, addr ) then
         return api.components[addr].api
     end
     return native.proxy(addr) 
 end
 
 api.type = function(addr)
-    if inTable(api.components, addr) then
+    if table.contains(api.components, addr) then
         return api.components[addr].type_
     end
     return native.type(addr) 

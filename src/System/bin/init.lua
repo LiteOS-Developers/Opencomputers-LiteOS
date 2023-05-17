@@ -24,20 +24,23 @@ if gpu then
     end
 end
 
+lib.loadfile("/System/kernel/stdlib.lua")()
+k.printk(k.L_INFO, "Loading Modules...")
+
 -- Load Modules
 local files = component.invoke(computer.getBootAddress(), "list", "/System/Kernel/modules")
 table.sort(files)
-
 for _,file in ipairs(files) do
     local module, err = _G.lib.loadfile("/System/Kernel/modules/" .. file)
     if not module then
         error(err)
+        while true do coroutine.yield() end
     end
     module()
 end
 
 
-k.threading.createThread("init", function()
+k.threading.createThread("/System/bin/init.lua", function()
     local sandbox = require("Sandbox")
     local env = sandbox.create_env({
         perm_check = false
