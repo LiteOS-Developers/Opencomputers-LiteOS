@@ -29,7 +29,7 @@ k.printk(k.L_INFO, "Loading Modules...")
 
 -- Load Modules
 -- local files = component.invoke(computer.getBootAddress(), "list", "/System/Kernel/modules")
-files = listdir("")
+files = listfiles("/System/Kernel/modules")
 table.sort(files)
 for _,file in ipairs(files) do
     local module, err = _G.lib.loadfile("/System/Kernel/modules/" .. file)
