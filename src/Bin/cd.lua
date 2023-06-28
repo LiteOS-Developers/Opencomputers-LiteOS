@@ -7,11 +7,11 @@ return {
             if filesystem.isDirectory(dir) then
                 shell:chdir(dir)
             else
-                local gpu = fs.open("/dev/gpu")
+                local gpu = filesystem.open("/dev/gpu")
                 ioctl(gpu, "setForeground", 0xF00000)
                 shell:print("cd: No such directory: " .. tostring(dir))
                 ioctl(gpu, "setForeground", 0xFFFFFF)
-                fs.close(gpu)
+                filesystem.close(gpu)
             end
         else
             shell:print(dump(shell:chdir()))

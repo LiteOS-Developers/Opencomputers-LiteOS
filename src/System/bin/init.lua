@@ -24,11 +24,13 @@ if gpu then
     end
 end
 
-lib.loadfile("/System/kernel/stdlib.lua")()
+lib.loadfile("/System/Kernel/stdlib.lua")()
 k.printk(k.L_INFO, "Loading Modules...")
 
 -- Load Modules
-local files = component.invoke(computer.getBootAddress(), "list", "/System/Kernel/modules")
+-- local files = component.invoke(computer.getBootAddress(), "list", "/System/Kernel/modules")
+files = listdir("")
+error(files)
 table.sort(files)
 for _,file in ipairs(files) do
     local module, err = _G.lib.loadfile("/System/Kernel/modules/" .. file)
