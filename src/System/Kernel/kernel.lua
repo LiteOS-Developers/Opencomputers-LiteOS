@@ -1,8 +1,3 @@
-if computer.getArchitecture() ~= "Lua 5.3" then
-    error("Failed to Boot: OS requires Lua 5.3")
-    _G.computer.shutdown()
-end
-
 _G.VERSION_INFO = {}
 _G.VERSION_INFO.major = 0
 _G.VERSION_INFO.minor = 1
@@ -11,6 +6,7 @@ _G.VERSION_INFO.release = "dev"
 
 k = {}
 lib.loadfile("/System/bin/init.lua")()
+-- error(computer.uptime())
 
 computer.pullSignal(0)
 local result

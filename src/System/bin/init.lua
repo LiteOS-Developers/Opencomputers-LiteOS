@@ -30,7 +30,6 @@ k.printk(k.L_INFO, "Loading Modules...")
 -- Load Modules
 -- local files = component.invoke(computer.getBootAddress(), "list", "/System/Kernel/modules")
 files = listdir("")
-error(files)
 table.sort(files)
 for _,file in ipairs(files) do
     local module, err = _G.lib.loadfile("/System/Kernel/modules/" .. file)
@@ -53,6 +52,7 @@ k.threading.createThread("/System/bin/init.lua", function()
     local shell = require("Shell")
     
     local sh, err
+    
     _G.filesystem = env.filesystem
     local sh, err = shell.connect("tty0")
     if not sh then

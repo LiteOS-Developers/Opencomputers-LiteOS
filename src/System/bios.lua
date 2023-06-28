@@ -52,8 +52,9 @@ do
         end
     end
     if not init then
-        error("BiosError: no bootable medium found" ..
-                  (reason and (": " .. tostring(reason)) or ""), 0)
+        error("BiosError: no bootable medium found " ..
+                  --(reason and (": " .. tostring(reason)) or ""), 0)
+                  tostring(reason))
     end
     computer.beep(1000, 0.2)
 end

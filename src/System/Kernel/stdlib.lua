@@ -98,7 +98,7 @@ end
 function deepcopy(orig, copies)
     copies = copies or {}
     local orig_type = type(orig)
-    local copy, t
+    local copy
     if orig_type == 'table' then
         if copies[orig] then
             copy = copies[orig]
@@ -118,5 +118,7 @@ function deepcopy(orig, copies)
     end
     return copy
 end
+
+
 
 return _G

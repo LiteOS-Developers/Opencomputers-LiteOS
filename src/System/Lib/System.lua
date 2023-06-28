@@ -20,24 +20,26 @@ system.executeFile = function(path, env)
     if env == nil then 
         env = _G
     end
-    if fs.isFile(path) then
-        local file = fs.open(path, "r")
-        local data = ""
-        local content
-        repeat
-            content = fs.read(file, math.huge)
-            data = data .. (content or "")
-        until not content
-        fs.close(file)
+    local api, e = lib.loadfile(path)
+    if api then
+        -- local file = fs.open(path, "r")
+        -- local data = ""
+        -- local content
+        -- repeat
+        --     content = fs.read(file, math.huge)
+        --     data = data .. (content or "")
+        -- until not content
+        -- fs.close(file)
         
-        local l, e = load(data, "=" .. path, "bt", env)
+        -- local l, e = load(data, "=" .. path, "bt", env)
 
-        if l == nil or e ~= nil then
-            k.panic("Error:".. e)
-        end
+        -- if l == nil or e ~= nil then
+        --     k.panic("Error:".. e)
+        -- end
         
-        local res = l()
-        return res
+        -- local res = l()
+        -- return res
+        return api()
     end
     error("FileNotFound: " .. path)
     return nil

@@ -135,7 +135,7 @@ api.listFreeSpace = function(addr)
     for idx, p in ipairs(partitions) do
         if idx < #partitions then
             local overalloc = partitions[idx+1].firstSector - (p.firstSector + p.size)
-            if overalloc > 1 then
+            if overalloc < 0 then
                 error(string.format("Overallocation between %s and %s by %.0f sectors ", tostring(p.firstSector), partitions[idx+1].firstSector, overalloc))
             end
             if overalloc >= 2 then

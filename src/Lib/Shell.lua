@@ -54,9 +54,9 @@ api.connect = function(tty)
             return nil, "PATH variable isn't set"
         end
         paths = split(path, ":")
-        for k, v in pairs(paths) do
-            if fs.isDirectory(v) then
-                for _, n in ipairs(fs.listDir(v)) do
+        for key, v in pairs(paths) do
+            if filesystem.isDirectory(v) then
+                for _, n in ipairs(filesystem.listDir(v)) do
                     if n == name .. ".lua" then
                         return v .. "/" .. name .. ".lua"
                     end
