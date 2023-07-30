@@ -29,7 +29,8 @@ end
 
 local blacklist = {
     component = true, computer = true, k = true, sName=true, package = true, s = true, require = true, VERSION_INFO = true,
-    scall = true, services = true, tohex = true, mounts = true, filesystem = true, lib = true
+    scall = true, services = true, tohex = true, mounts = true, filesystem = true, lib = true, readfileK = true, loadfileK = true,
+    listfiles = true, trim = true, getFiles = true
 }
 
 api.create_env = function(opts)

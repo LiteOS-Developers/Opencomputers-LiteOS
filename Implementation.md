@@ -39,7 +39,7 @@ Returns a list of names of objects in the directory at the specified absolute pa
 Returns the (real world) timestamp of when the object at the specified absolute path in the file system was modified. <br>
 ### ~~getLabel():string~~ <br>
 Get the current label of the file system. <br>
-remove(path:string):boolean <br>
+## remove(path:string):boolean <br>
 Removes the object at the specified absolute path in the file system. <br>
 ### ~~close(handle:number)~~ <br>
 Closes an open file descriptor with the specified handle. <br>

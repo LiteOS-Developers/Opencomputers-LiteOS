@@ -1,6 +1,6 @@
 return {
     main = function(args)
-        local lfs = require("System.lfs/drive")
+        local lfs = require("System.lfs")
         if #args < 3 then
             print(string.format("%s <device> <target>", args[1]))
             return -1

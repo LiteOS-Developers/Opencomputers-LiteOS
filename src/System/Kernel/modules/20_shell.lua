@@ -14,6 +14,7 @@ k.shell = {}
 k.shell.current = "tty0"
 k.shell.all = {}
 
+local _env = ""
 
 k.shell.parseEnv = function(filename)
     checkArg(1, filename, "string")
@@ -95,18 +96,19 @@ k.shell.create = function(pwd, env, name)
                 end
             end
             
-            local _ENV = _G
-            _G = env
-            if _G.k ~= nil then
-                _ENV.k.panic("Kernel global is not cleared!")
-            end
-            local thread = _ENV.k.threading.createThread(file, function()
-                local f = _ENV.k.system.executeFile(file, env)
+            _env = _G
+            -- if _G.k ~= nil then
+            --     _env.k.panic("Kernel global is not cleared!")
+            -- end
+            local exec_ = k.system.executeFile
+            local thread = k.threading.createThread(file, function()
+                _G = env
+                local f = exec_(file, env)
                 return f.main(args)
             end)
             thread:start()
             
-            _G = _ENV
+            _G = _env
             return thread, nil
             
         end

@@ -51,7 +51,7 @@ end
 return {
     main = function(args)
         local drives = require("system.Drives")
-        local lfs = require("System.lfs/drive")
+        local lfs = require("System.lfs")
 
         if not drives or not lfs then
             print("mkfs.lfs: Requires elevated Rights or missing libraries")

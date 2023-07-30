@@ -44,6 +44,7 @@ end
 return {
     main=function(args)
         local shell = require("Shell").connect("tty0")
+        local print = function(m) shell:print(m) end
         local dir = shell:chdir()
         local gpu = fs.open("/dev/gpu")
         if #args >= 2 then
