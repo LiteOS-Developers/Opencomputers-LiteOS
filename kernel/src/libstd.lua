@@ -1,3 +1,4 @@
+--#skip 13
 --[[
     Copyright (C) 2023 thegame4craft
 
@@ -15,12 +16,11 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]--
 
---#define KERNEL
-local k = {}
---#include "cmdline.lua"
---#include "libstd.lua"
---#include "threading.lua"
---#include "scheduler.lua"
---#include "loop.lua"
-
-error("STOP!")
+table.keys = function(t)
+    checkArg(1, t, "table")
+    local r = {}
+    for k, v in pairs(t) do
+        _G.table.insert(r, k)
+    end
+    return r
+end
