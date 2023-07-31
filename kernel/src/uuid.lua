@@ -15,30 +15,36 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]--
-k.printk(k.L_INFO, "loop")
+k.printk(k.L_INFO, "uuid")
+--#define UUID
 
---#ifdef KERNEL
-while true do
-    pid, thread = k.nextThread()
-    if pid == nil then
-        error("System Crashed! There are no running processes!")
-    end
-    result = k.schedule(pid, thread)
-    if result[1] == nil and result.n == 1 then
-        goto continue
-    end
-    if not result[1] then
-        error(dump(result[2]))
-    end
-    if coroutine.status(v.coro) == "dead" then
-        k.threading.threads[pid].result = result[2]
-        k.threading.threads[pid]:stop()
-        goto continue
-    end
-    -- if result[2] == "syscall" then
-    --     error("!")
-    --     result = table.pack(coroutine.resume(v.coro, table.unpack({k.processSyscall(result)})))
-    -- end
-    ::continue::
+
+k.uuid = {}
+
+function tohex(str)
+    return (str:gsub('.', function (c)
+        return string.lower(string.format('%02X', string.byte(c)))
+    end))
 end
---#endif
+local function zFill(str, n)
+    while string.len(str) < n do
+        str = "0" .. str
+    end
+    return str
+end
+
+k.uuid.next = function()
+    local sets = {4, 2, 2, 2, 6}
+    local result = ""
+    local pos = 0
+    for _,set in ipairs(sets) do
+        if result:len() > 0 then
+          result = result .. "-"
+        end
+        for _ = 1,set do
+            local byte = math.random(0, 255)
+            result = result .. zFill(string.format("%x", byte), 2)
+        end
+    end
+    return result
+end

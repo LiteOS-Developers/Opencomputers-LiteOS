@@ -1,3 +1,4 @@
+--#skip 13
 --[[
     Copyright (C) 2023 thegame4craft
 
@@ -14,22 +15,21 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]--
+--#define SYSCALLS
+k.printk(k.L_INFO, "syscalls")
+k.syscalls = {}
 
---#define KERNEL
-local k = {}
-k.boottime = computer.uptime()
-k.hlt = function() while true do computer.pullSignal() end end
---#include "cmdline.lua"
---#include "init/screen.lua"
---#include "printk.lua"
---#include "libstd.lua"
---#include "uuid.lua"
---#include "drivers/main.lua"
---#include "init/main.lua"
---#include "threading.lua"
---#include "scheduler.lua"
---#include "loop.lua"
-k.printk(k.L_INFO, "kernel")
+function k.perform_syscall(call, ...)
+    checkArg(1, call, "string")
+    if not k.syscalls[call] then
+        return nil, k.errno.ENOSYS
+    end
+    local result = table.pack(pcall(k.syscalls[name], ...))
+    return return table.unpack(result, result[1] and 2 or 1, result.n)
+end
 
-
-error("STOP!")
+function k.register_syscall(call, f)
+    checkArg(1, call, "string")
+    checkArg(2, f, "function")
+    k.syscalls[call] = f
+end

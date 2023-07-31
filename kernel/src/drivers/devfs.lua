@@ -1,9 +1,13 @@
-local devfs = {}
-local uuid = _G.lib.loadfile("/Lib/uuid.lua")()
+--#ifndef UUID
+--#error UUID is not loaded
+--#endif
+--#define DRV_DEVFS
+k.printk(k.L_INFO, "drivers/devfs")
+k.devfs = {}
 
-devfs.create = function()
+k.devfs.create = function()
     local proxy = {}
-    proxy.addr = uuid.next()
+    proxy.addr = k.uuid.next()
     proxy.devices = {}
     proxy.handles = {}
 
@@ -14,33 +18,33 @@ devfs.create = function()
         checkArg(1, file, "string")
         checkArg(1, mode, "string")
 
-        assert(mode == "r", "Unable to open device in write mode: Not allowed")
-
         local name = string.sub(file, 2, string.len(file))
         local pos = #proxy.handles + 1
         local value = {device=name, file=file}
         proxy.handles[pos] = value
-        -- k.write(dump(pos))
-        if pos == 10 then
-        end
         if proxy.handles[pos] == nil then
-            k.write(dump(proxy.handles[pos] == nil))
+            k.println(dump(proxy.handles[pos] == nil))
             k.panic("Device " .. tostring(pos) .. " not opened correctly")
         end
         return pos
     end
     proxy.ensureOpen = function(handle)
         checkArg(1, handle, "number")
-        -- k.write("ensureOpen " .. tostring(tonumber(handle)))
-        -- error("1")
         if type(proxy.handles[handle]) ~= "table" then
-            k.write("36 is true " .. dump(handle))
+            k.println("36 is true " .. dump(handle))
             return false
         end 
         return proxy.handles[handle].closed ~= true
     end
     proxy.seek = function(handle, wh, off)
-        error("Devices doesn't support seek")
+        checkArg(1, handle, "number")
+        checkArg(2, count, "number")
+        local device = proxy.handles[handle].device
+        device = proxy.device[device]
+        if device.api.seek then
+            return device.api.seek(wh, off)
+        end
+        error("That device doesn't support seek: " .. proxy.handles[handle].device)
     end
     proxy.makeDirectory = function(path)
         error("Devices doesn't support directories")
@@ -54,7 +58,14 @@ devfs.create = function()
         return true
     end
     proxy.write = function(handle, buf)
-        error("Devices doesn't support write")
+        checkArg(1, handle, "number")
+        checkArg(2, buf, "string")
+        local device = proxy.handles[handle].device
+        device = proxy.device[device]
+        if device.api.write then
+            return device.api.write(buf)
+        end
+        error("That device doesn't support write: " .. proxy.handles[handle].device)
     end
     proxy.spaceTotal = function()
         return 0
@@ -86,29 +97,29 @@ devfs.create = function()
         checkArg(1, filepath, "string")
         return (proxy.devices[filepath:sub(2)].opts or {}).size or 0
     end
+    proxy.getAttrs = function(file)
+        local file = file:sub(2)
+        local device = proxy.devices[file]
+        if device == nil then
+            k.println(proxy.handles[handle].device:sub(1, -6)) 
+            return nil, "No device Found!"
+        end
+        return {
+            mode = device.opts.permissions,
+            uid = 0,
+            gid = 0,
+            created = 0
+        }
+    end
     proxy.read = function(handle, count)
         checkArg(1, handle, "number")
-        if proxy.handles[handle].file:sub(-5, -1) == ".attr" then
-            proxy.handles[handle].read = (proxy.handles[handle].read or 0) + 1
-            if proxy.handles[handle].read == 1 then
-                local device = proxy.devices[proxy.handles[handle].device:sub(1, -6)]
-                if device == nil then
-                    k.write(proxy.handles[handle].device:sub(1, -6)) 
-                    return nil, "No device Found!"
-                end
-                local permissions = device.opts.permissions
-                return string.format([[
-mode: %s
-    
-uid:0
-created:0
-gid:0
-                ]], permissions or "r--r--r--")
-            else
-                return nil -- indicate EOF
-            end
+        checkArg(2, count, "number")
+        local device = proxy.handles[handle].device
+        device = proxy.device[device]
+        if device.api.read then
+            return device.api.read(count)
         end
-        error("Devices doesn't support read: " .. dump(proxy.handles[handle]))
+        error("That device doesn't support read: " .. proxy.handles[handle].device)
     end
     
     proxy.register = function(name, api, opts)
@@ -152,4 +163,3 @@ gid:0
     end
     return proxy
 end
-return devfs

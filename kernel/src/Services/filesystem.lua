@@ -127,7 +127,6 @@ api.getRealHandle = function(handle)
 end
 api.open = function(path, m)
     checkArg(1, path, "string")
-    
     checkArg(2, m, "string", "nil")
     m = m or "r"
     local mode = {}

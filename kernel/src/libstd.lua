@@ -16,6 +16,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]--
 
+k.printk(k.L_INFO, "libstd")
+
 table.keys = function(t)
     checkArg(1, t, "table")
     local r = {}
@@ -23,4 +25,17 @@ table.keys = function(t)
         _G.table.insert(r, k)
     end
     return r
+end
+
+function split(str, sep)
+    checkArg(1, inputstr, "string")
+    checkArg(2, sep, "string")
+    if sep == nil then
+        sep = "%s"
+    end
+    local t={}
+    for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+        table.insert(t, str)
+    end
+    return t
 end
