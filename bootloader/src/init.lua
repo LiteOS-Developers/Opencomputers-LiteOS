@@ -2,7 +2,7 @@ local eeprom = component.list("eeprom")()
 local fs = component.proxy(component.invoke(eeprom, "getData"))
 local content
 local data = ""
-local handle = fs.open("/System/bios.lua")
+local handle = fs.open("/etc/bios.lua")
 repeat
 	content = fs.read(handle, math.huge)
 	data = data .. (content or "")

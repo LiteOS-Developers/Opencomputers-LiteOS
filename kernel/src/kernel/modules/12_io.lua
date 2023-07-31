@@ -4,7 +4,7 @@ _G.io = {}
 -- local buffers = require("Buffer")
 local write = k.write
 local lvl = k.L_INFO
-io.stdout = require("Buffer").new("w", {
+io.stdout = require("buffer").new("w", {
     write = function(self, buf)
         local lines = string.gmatch(buf, "([^\n]+)")
         for line in lines do
@@ -13,7 +13,8 @@ io.stdout = require("Buffer").new("w", {
     end
 })
 io.stdout:setvbuf("no")
-io.stderr = require("Buffer").new("w", {
+
+io.stderr = require("buffer").new("w", {
     write = function(self, buf)
         local old, _ = k.gpu.setForeground(0xF00000)
         local lines = string.gmatch(buf, "([^\n]+)")

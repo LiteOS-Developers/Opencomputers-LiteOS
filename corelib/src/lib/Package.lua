@@ -60,9 +60,9 @@ api.addLibraryPath = function(path)
     table.insert(api.searchPaths, path)
 end
 
-api.addLibraryPath("/Lib/?.lua")
-api.addLibraryPath("/Lib/?/init.lua")
-api.addLibraryPath("/Lib/?/?.lua")
+api.addLibraryPath("/usr/lib/?.lua")
+api.addLibraryPath("/usr/lib/?/init.lua")
+api.addLibraryPath("/usr/lib/?/?.lua")   
 
 api.require = api.loadPackage
 

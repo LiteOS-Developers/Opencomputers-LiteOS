@@ -13,7 +13,7 @@ do
         return load(buffer, "=" .. file, "bt", _G)
     end
 
-    local kernel, err = _G.lib.loadfile("/System/Kernel/kernel.lua")
+    local kernel, err = _G.lib.loadfile("/boot/kernel.lua")
     if kernel == nil then
         error("Cannot load kernel: " .. err)
     end

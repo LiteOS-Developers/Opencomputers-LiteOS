@@ -1,6 +1,6 @@
 local init
 do
-    local bootPath = "/System/boot.lua"
+    local bootPath = "/boot/boot.lua"
     local component_invoke = component.invoke
     local function boot_invoke(address, method, ...)
         local result = table.pack(pcall(component_invoke, address, method, ...))

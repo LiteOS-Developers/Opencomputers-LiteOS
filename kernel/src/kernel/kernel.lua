@@ -5,7 +5,7 @@ _G.VERSION_INFO.micro = 0
 _G.VERSION_INFO.release = "dev"
 
 k = {}
-lib.loadfile("/System/bin/init.lua")()
+lib.loadfile("/sbin/init.lua")()
 -- error(computer.uptime())
 
 computer.pullSignal(0)

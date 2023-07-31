@@ -1,0 +1,2 @@
+--#define KERNEL
+error("STOP!")

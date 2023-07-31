@@ -29,8 +29,8 @@ package.require = function(name)
     return nil, "Package '".. name .. "' not found"
 end
 
-package.addLibraryPath("/Lib/?.lua")
-package.addLibraryPath("/Lib/?/init.lua")
-package.addLibraryPath("/Lib/?/?.lua")
+package.addLibraryPath("/usr/lib/?.lua")
+package.addLibraryPath("/usr/lib/?/init.lua")
+package.addLibraryPath("/usr/lib/?/?.lua")   
 
 return package
