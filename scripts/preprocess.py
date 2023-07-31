@@ -1,6 +1,11 @@
 import os.path
 import re
 import io
+import subprocess
+
+def error(msg):
+    subprocess.call(["printf", "[  \033[1;91mERR\033[0;39m ] " + msg + "\n"])
+
 
 
 class PreProcessor:
@@ -28,14 +33,16 @@ class PreProcessor:
                 skip_n -= 1
                 continue
 
-            """if result := re.match("--#define([\s]+)([A-Za-z][\w\d]+)([\s]+)([\w\s\d()+\-\*/,]+)", line.strip()):
-                self.defines[result.groups()[1]] = result.groups()[3]
-            el"""
             if (result := re.match("--#define([\s]+)([A-Za-z][\w\d]+)", line.strip())) and not skip:
                 self.defines[result.groups()[1]] = True
                 continue
-            if (result := re.match(r"--#undef([\s]+)([A-Za-z][\w\d]+)", line.strip())) and not skip:
+            elif (result := re.match(r"--#undef([\s]+)([A-Za-z][\w\d]+)", line.strip())) and not skip:
                 self.defines[result.groups()[1]] = False
+            elif not skip and line.startswith("--#error"):
+                line = line[8:]
+                error(line.strip())
+                raise SystemExit(-1)
+                sys.exit(-1)
             elif (result := re.match(r"--#ifdef([\s]+)([A-Za-z][\w\d]+)", line.strip())) and not skip:
                 if not self.defines.get(result.groups()[1]):
                     skip = True
