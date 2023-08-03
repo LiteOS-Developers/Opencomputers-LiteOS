@@ -6,4 +6,4 @@ entry LiteOS (Default)
 entry LiteOS (Debug)
     kernel /boot/kernel.lua
     arch Lua53
-    opts loglevel=8,init=/sbin/init.lua
+    opts loglevel=8,init=/sbin/init.lua,log_process_deaths=true

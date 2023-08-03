@@ -74,7 +74,7 @@ do
         return buffer
     end
 
-    function menu(entries)
+    local function menu(entries)
         local w, h = gpu.getResolution()
         local str = "LiteOS Loader"
         local x = (w - str:len()) / 2
@@ -151,7 +151,7 @@ do
             end
         end
     end
-    function loadConfig()
+    local function loadConfig()
         local config = _G.lib.readFile("/boot/config")
         local entries = {}
         local selected
