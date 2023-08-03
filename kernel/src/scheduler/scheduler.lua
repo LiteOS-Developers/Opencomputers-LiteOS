@@ -15,11 +15,19 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]--
-k.printk(k.L_INFO, "scheduler")
+k.printk(k.L_INFO, "scheduler/scheduler")
 
 k.threadIdx = 0
 k.nextThread = function()
     local keys = table.keys(k.threading.threads)
+    local allDead = true
+    for _, key in ipairs(keys) do
+        if not k.threading.threads[key].stopped then 
+            allDead = false
+            break
+        end
+    end
+    if allDead then return nil end
     if #keys == 0 then return nil end
     if k.threadIdx >= #keys then
         k.threadIdx = 0

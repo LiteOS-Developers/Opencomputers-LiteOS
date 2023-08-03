@@ -20,7 +20,6 @@
 
 local screen = component.list("screen", true)()
 local gpu = screen and component.list("gpu", true)()
-k.screen = {}
 k.devices = {}
 if gpu then 
     gpu = component.proxy(gpu)
@@ -30,35 +29,44 @@ if gpu then
             gpu.bind(screen)
         end
         local w, h = gpu.getResolution()
-        k.screen.w = w
-        k.screen.h = h
+        k.cursor:init(1, 1, w, h)
         gpu.setResolution(w, h)
         gpu.setForeground(0xFFFFFF)
         gpu.setBackground(0x000000)
         gpu.fill(1, 1, w, h, " ")
         k.devices.screen = component.proxy(screen)
-        k.devices.gpu = gpu
     end
 end
 
-k.println = function(line)
-    lib.log_to_screen(line)
-    return
-    -- msg = msg or ""
-    -- if k.devices.gpu then
-    --     local sw, sh = k.devices.gpu.getResolution() 
-    --     for l in split(line, "\n") do
-    --         k.devices.gpu.set(k.screen.x, k.screen.y, l)
-    --         if k.screen.y == sh then
-    --             k.devices.gpu.copy(1, 2, sw, sh - 1, 0, -1)
-    --             k.devices.gpu.fill(1, sh, sw, 1, " ")
-    --         else
-    --             k.screen.y = k.screen.y + 1
-    --         end
-    --         k.screen.x = 1
-    --     end
-    --     -- k.screen.x = k.screen.x + string.len(msg)
-    -- end
+function k.setText(x, y, text)
+    local w, h = gpu.getResolution()
+    gpu.fill(x, y, w-x, 1, " ")
+    gpu.set(x, y, text:sub(1, w-x))
+end
+
+k.printf = function(fmt, ...)
+    local msg = string.format(fmt, ...)
+    if gpu then
+        local sw, sh = k.cursor.width, k.cursor.height
+        local lines = split(msg, "\n")
+        for idx, l in pairs(lines) do
+            l = l:gsub("\t", "  ")
+            gpu.set(k.cursor:getX(), k.cursor:getY(), l)
+            -- lib.log_to_screen(dump(sh))
+            if k.cursor:getY() == k.cursor.height then
+                gpu.copy(1, 2, sw, sh - 1, 0, -1)
+                gpu.fill(1, sh, sw, 1, " ")
+            end
+        end
+        if msg:sub(-1, -1) ~= "\n" then
+            k.cursor:incx(string.len(lines[#lines]))
+        else
+            k.cursor:move(1)
+            if k.cursor:getY() < k.cursor.height then   
+                k.cursor:incy(1)
+            end
+        end
+    end
 end
 
 k.getGPU = function() return gpu end

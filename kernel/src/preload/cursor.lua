@@ -1,3 +1,4 @@
+--#skip 13
 --[[
     Copyright (C) 2023 thegame4craft
 
@@ -15,22 +16,42 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]--
 
---#define KERNEL
-local k = {}
-k.slowDown = 0.5
-k.boottime = computer.uptime()
-k.hlt = function() while true do computer.pullSignal() end end
---#include "libstd.lua"
---#include "preload/main.lua"
---#include "event.lua"
---#include "uuid.lua"
---#include "fd.lua"
---#include "drivers/main.lua"
---#include "lib/main.lua"
---#include "init/main.lua"
---#include "scheduler/main.lua"
---#include "package.lua"
---#include "user/main.lua"
 
-k.scheduler_loop()
-k.panic("Kernel Stopped!")
+k.cursor = {
+    x = 0,
+    y = 0,
+    width = 0,
+    height = 0
+}
+
+k.cursor.init = function(self, x, y, w, h)
+    self.x = x
+    self.y = y
+    self.width = w
+    self.height = h
+    return self
+end
+
+k.cursor.getX = function(self)
+    return self.x
+end
+k.cursor.getY = function(self)
+    return self.y
+end
+k.cursor.getWidth = function(self)
+    return self.width
+end
+k.cursor.getHeight = function(self)
+    return self.heigth
+end
+
+k.cursor.move = function(self, x, y)
+    if x then self.x = x end
+    if y then self.y = y end
+end
+k.cursor.incx = function(self, v)
+    self.x = self.x + v
+end
+k.cursor.incy = function(self, v)
+    self.y = self.y + v
+end

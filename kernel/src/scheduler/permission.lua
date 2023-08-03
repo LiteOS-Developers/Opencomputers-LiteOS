@@ -15,30 +15,24 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]--
---#define SYSCALLS
-k.printk(k.L_INFO, "syscalls")
-k.syscalls = {}
 
-function k.perform_syscall(call, ...)
-    checkArg(1, call, "string")
-    if not k.syscalls[call] then
-        return nil, k.errno.ENOSYS
-    end
-    local result = table.pack(pcall(k.syscalls[name], ...))
-    return table.unpack(result, result[1] and 2 or 1, result.n)
-end
+k.printk(k.L_INFO, "scheduler/permission")
 
-function k.register_syscall(call, f)
-    checkArg(1, call, "string")
-    checkArg(2, f, "function")
-    k.syscalls[call] = f
-end
+k.umask = function(v)
+    local result = 0
+    local root = v:sub(1, 3)
+    local group = v:sub(4,6)
+    local others = v:sub(7,9)
+    result = result | (root:sub(1) == "r" and 256 or 0) 
+    result = result | (root:sub(2) == "w" and 128 or 0) 
+    result = result | (root:sub(3) == "x" and 64 or 0) 
 
-function k.syscalls.exit(status)
-    checkArg(1, status, "number")
-    local current = k.current_process()
-    current.status = status
-    current.threads = {}
-    current.thread_count = 0
-    current.is_dead = true 
+    result = result | (group:sub(1) == "r" and 32 or 0) 
+    result = result | (group:sub(2) == "w" and 16 or 0) 
+    result = result | (group:sub(3) == "x" and 8 or 0)
+
+    result = result | (others:sub(1) == "r" and 4 or 0) 
+    result = result | (others:sub(2) == "w" and 2 or 0) 
+    result = result | (others:sub(3) == "x" and 1 or 0) 
+    return result
 end

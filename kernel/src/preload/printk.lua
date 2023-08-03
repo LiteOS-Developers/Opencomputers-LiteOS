@@ -39,13 +39,13 @@ function k.printk(level, fmt, ...)
     local message = string.format("[%08.02f] %s: ", computer.uptime() - k.boottime, reverse[level]) .. string.format(fmt, ...)
 
     if level <= k.cmdline.loglevel then
-        k.println(message)
+        k.printf("%s\n", message)
+        -- lib.log_to_screen(message)
     end
 
     -- log_to_buffer(message)
 end
-k.printk(k.L_INFO, "init/screen")
-k.printk(k.L_INFO, "printk")
+k.printk(k.L_INFO, "preload")
 
 
 local pullSignal = computer.pullSignal

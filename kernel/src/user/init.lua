@@ -1,3 +1,4 @@
+--#skip 13
 --[[
     Copyright (C) 2023 thegame4craft
 
@@ -15,22 +16,12 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]--
 
---#define KERNEL
-local k = {}
-k.slowDown = 0.5
-k.boottime = computer.uptime()
-k.hlt = function() while true do computer.pullSignal() end end
---#include "libstd.lua"
---#include "preload/main.lua"
---#include "event.lua"
---#include "uuid.lua"
---#include "fd.lua"
---#include "drivers/main.lua"
---#include "lib/main.lua"
---#include "init/main.lua"
---#include "scheduler/main.lua"
---#include "package.lua"
---#include "user/main.lua"
+k.printk(k.L_INFO, "user/init")
 
-k.scheduler_loop()
-k.panic("Kernel Stopped!")
+-- local user = k.user.auth()
+k.printk(k.L_INFO, "User Auth finished")
+local init = k.create_thread(function() 
+    k.exec("/sbin/init.lua")
+end)
+local process = k.get_process(k.add_process())
+process:addThread(init)

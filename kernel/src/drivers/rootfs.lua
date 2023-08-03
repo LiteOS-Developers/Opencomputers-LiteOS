@@ -19,8 +19,7 @@
 --#define DRV_ROOTFS
 k.printk(k.L_INFO, "drivers/rootfs")
 k.rootfs = {
-    mounts = {},
-    handles = {}
+    mounts = {}
 }
 
 local function getAddrAndPath(_path)
@@ -109,17 +108,28 @@ function k.rootfs.open(path)
     checkArg(2, m, "string", "nil")
     local addr, aPath = getAddrAndPath(path)
     local handle = k.component.invoke(addr, "open", aPath, m)
-    k.rootfs.handles[#k.rootfs.handles+1] = {handle = handle, addr = addr, open=true}
-    return #k.rootfs.handles
+    return k.create_fd({
+        write = function(fd, buf)
+            return k.component.invoke(addr, "write", handle, buf)
+        end,
+        seek = function(wh, off)
+            return k.component.invoke(addr, "seek", handle, wh, off)
+        end,
+        read = function(c)
+            return k.component.invoke(addr, "read", handle, c)
+        end,
+        close = function()
+            k.component.invoke(addr, "close", handle)
+        end
+    })
 end
 
-function k.rootfs.seek(handle, wh, off)
-    checkArg(1, handle, "number")
+function k.rootfs.seek(fd, wh, off)
+    checkArg(1, fd, "number")
     checkArg(2, _whence, "number")
     checkArg(3, offset, "number")
-    local handle = k.rootfs.handles[handle]
-    if not handle.open then return nil, k.errno.ECLOSED end
-    return k.component.invoke(handle.addr, "seek", handle.handle, wh, off)
+    if not k.isOpen(fd) then return nil, k.errno.EBADFD end
+    return k.seek(fd, wh, off)
 end
 
 function k.rootfs.makeDirectory(path)
@@ -140,12 +150,11 @@ function k.rootfs.isReadOnly(path)
     return k.component.invoke(addr, "isReadOnly")
 end
 
-function k.rootfs.write(handle, buf)
-    checkArg(1, handle, "number")
+function k.rootfs.write(fd, buf)
+    checkArg(1, fd, "number")
     checkArg(2, buf, "string")
-    local handle = k.rootfs.handles[handle]
-    if not handle.open then return nil, k.errno.ECLOSED end
-    return k.component.invoke(handle.addr, "write", handle.handle, buf)
+    if not k.isOpen(fd) then return nil, k.errno.ECLOSED end
+    return k.write(fd)
 end
 
 function k.rootfs.spaceTotal(path)
@@ -192,14 +201,10 @@ function k.rootfs.remove(path)
     return k.component.invoke(addr, "remove", aPath)
 end
 
-function k.rootfs.close(handle, buf)
-    checkArg(1, handle, "number")
-    checkArg(2, _whence, "number")
-    checkArg(3, offset, "number")
-    local handle = k.rootfs.handles[handle]
-    if not handle.open then return nil, k.errno.ECLOSED end
-    k.component.invoke(handle.addr, "close", handle.handle)
-    k.rootfs.handels[handle].open = false
+function k.rootfs.close(fd)
+    checkArg(1, fd, "number")
+    if not k.isOpen(fd) then return nil, k.errno.EBADFD end
+    k.close(fd)
 end
 
 function k.rootfs.size(path)
@@ -208,12 +213,11 @@ function k.rootfs.size(path)
     return k.component.invoke(addr, "size", aPath)
 end
 
-function k.rootfs.read(handle, count)
-    checkArg(1, handle, "number")
+function k.rootfs.read(fd, count)
+    checkArg(1, fd, "number")
     checkArg(2, count, "number")
-    local handle = k.rootfs.handles[handle]
-    if not handle.open then return nil, k.errno.ECLOSED end
-    return k.component.invoke(handle.addr, "read", handle.handle, count)
+    if not k.isOpen(fd) then return nil, k.errno.ECLOSED end
+    return k.read(fd, count)
 end
 
 function k.rootfs.setLabel(path, value)
@@ -232,10 +236,7 @@ function k.rootfs.getAttrs(path)
     return k.component.invoke(addr, "getAttrs", aPath)
 end
 
-function k.rootfs.ensureOpen(path)
-    checkArg(1, handle, "number")
-    checkArg(2, count, "number")
-    local handle = k.rootfs.handles[handle]
-    if not handle.open then return false end
-    return true
+function k.rootfs.ensureOpen(fd)
+    checkArg(1, fd, "number")
+    return k.isOpen(fd)
 end

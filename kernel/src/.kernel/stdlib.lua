@@ -23,35 +23,6 @@ function k.write(msg, newLine)
     end
 end
 
-k.L_EMERG   = 0
-k.L_ALERT   = 1
-k.L_CRIT    = 2
-k.L_ERROR   = 3
-k.L_WARNING = 4
-k.L_NOTICE  = 5
-k.L_INFO    = 6
-k.L_DEBUG   = 7
-k.cmdline = {}
-k.cmdline.loglevel = tonumber(k.cmdline.loglevel) or 8
-
-local reverse = {}
-for name,v in pairs(k) do
-    if name:sub(1,2) == "L_" then
-        reverse[v] = name:sub(3)
-    end
-end
-
-function k.printk(level, fmt, ...)
-    checkArg(1, level, "number")
-    local message = string.format("[%08.02f] %s: ", computer.uptime(), reverse[level]) .. string.format(fmt, ...)
-
-    if level <= k.cmdline.loglevel then
-        k.write(message)
-    end
-
-    -- log_to_buffer(message)
-end
-
 function _G.dump(o)
     if type(o) == 'table' then
         local s = '{ '

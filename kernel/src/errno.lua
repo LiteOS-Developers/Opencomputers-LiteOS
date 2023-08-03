@@ -21,10 +21,10 @@ do
     ENOTTY = 25,
     ENOSYS = 38,
     EUNATCH = 49,
+    EBADFD = 77
     ELIBEXEC = 83,
     ENOPROTOOPT = 92,
     ENOTSUP = 95,
-    ECLOSED = 1001,
     EDEVSWT = 1002 -- E_DEVICE_SWITCH
   }
 end

@@ -23,7 +23,7 @@ k.devfs.create = function()
         local value = {device=name, file=file}
         proxy.handles[pos] = value
         if proxy.handles[pos] == nil then
-            k.println(dump(proxy.handles[pos] == nil))
+            k.printf(dump(proxy.handles[pos] == nil))
             k.panic("Device " .. tostring(pos) .. " not opened correctly")
         end
         return pos
@@ -31,7 +31,7 @@ k.devfs.create = function()
     proxy.ensureOpen = function(handle)
         checkArg(1, handle, "number")
         if type(proxy.handles[handle]) ~= "table" then
-            k.println("36 is true " .. dump(handle))
+            k.printf("36 is true " .. dump(handle))
             return false
         end 
         return proxy.handles[handle].closed ~= true
@@ -101,7 +101,7 @@ k.devfs.create = function()
         local file = file:sub(2)
         local device = proxy.devices[file]
         if device == nil then
-            k.println(proxy.handles[handle].device:sub(1, -6)) 
+            k.printf(proxy.handles[handle].device:sub(1, -6)) 
             return nil, "No device Found!"
         end
         return {

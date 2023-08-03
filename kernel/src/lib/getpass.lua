@@ -1,3 +1,4 @@
+--#skip 13
 --[[
     Copyright (C) 2023 thegame4craft
 
@@ -15,22 +16,25 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]--
 
---#define KERNEL
-local k = {}
-k.slowDown = 0.5
-k.boottime = computer.uptime()
-k.hlt = function() while true do computer.pullSignal() end end
---#include "libstd.lua"
---#include "preload/main.lua"
---#include "event.lua"
---#include "uuid.lua"
---#include "fd.lua"
---#include "drivers/main.lua"
---#include "lib/main.lua"
---#include "init/main.lua"
---#include "scheduler/main.lua"
---#include "package.lua"
---#include "user/main.lua"
+k.getpass = function()
+    local line = ""
 
-k.scheduler_loop()
-k.panic("Kernel Stopped!")
+    local x, y = k.cursor:getX(), k.cursor:getY()
+    while true do
+        local _, addr, char, code, ply = k.event.pull("key_down")
+        local chr = utf8.char(char)
+        if chr == "\r" then
+            k.setText(x, y, " ")
+            k.printf("%s\n", string.rep("*", line:len()))
+            break
+        elseif chr == "\b" then
+            line = line:sub(1, -2)
+        elseif chr == "\t" then
+            line = line .. "    "
+        else
+            line = line .. chr
+        end
+        k.setText(x, y, string.rep("*", line:len()))
+    end
+    return line
+end

@@ -16,7 +16,30 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]--
 
-k.printk(k.L_INFO, "libstd")
+
+function deepcopy(orig, copies)
+    copies = copies or {}
+    local orig_type = type(orig)
+    local copy
+    if orig_type == 'table' then
+        if copies[orig] then
+            copy = copies[orig]
+        else
+            copy = {}
+            copies[orig] = copy
+            for orig_key, orig_value in next, orig, nil do
+                copy[deepcopy(orig_key, copies)] = deepcopy(orig_value, copies)
+            end
+            t = deepcopy(getmetatable(orig), copies)
+            if type(t) == "table" or type(t) == "nil" then
+                setmetatable(copy, t)
+            end
+        end
+    else -- number, string, boolean, etc
+        copy = orig
+    end
+    return copy
+end
 
 table.keys = function(t)
     checkArg(1, t, "table")
@@ -27,7 +50,26 @@ table.keys = function(t)
     return r
 end
 
-function split(str, sep)
+table.forEach = function(tbl, f)
+    checkArg(1, tbl, "table")
+    checkArg(2, f, "function")
+    local res = {}
+
+    for _, value in pairs(tbl) do
+        local r = f(_, value)
+        if r then res[_] = r end 
+    end
+    if #res > 0 then return res end
+end
+
+function table.merge(p, s)
+    for key, value in pairs(s) do
+        p[key] = value
+    end
+    return p
+end
+
+function split(inputstr, sep)
     checkArg(1, inputstr, "string")
     checkArg(2, sep, "string")
     if sep == nil then
