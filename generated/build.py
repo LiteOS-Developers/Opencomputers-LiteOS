@@ -1,5 +1,5 @@
 import subprocess
-import os
+import os, shutil
 
 def walk(dir, endswith=None):
     files = []
@@ -20,6 +20,11 @@ files, dirs = walk(os.path.join(os.environ["SRC"], "src"))
 for d in dirs:
     d = d.replace(os.path.join(os.environ["SRC"], "src") + "/", "")
     subprocess.call(["mkdir", "-p", os.path.join(os.environ["TARGET"], d)])
+
+for f in files:
+    trg = f.replace(os.path.join(os.environ["SRC"], "src") + "/", "")
+    trg = os.path.join(os.environ["TARGET"], trg)
+    shutil.copyfile(f, trg)
 
 
 
