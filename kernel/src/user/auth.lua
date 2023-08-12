@@ -18,8 +18,9 @@
 
 k.printk(k.L_INFO, "user/auth")
 k.user = {}
+k.sessions = {}
 local sha3 = k.require("sha3")
-k.hostname = k.readfile("/etc/hostname")
+-- k.hostname = k.readfile("/etc/hostname")
 
 function k.user.groups(username)
     local groups = k.readfile("/etc/group")
@@ -28,11 +29,12 @@ function k.user.groups(username)
         local data = split(line, ":")
         local g = {}
         g.name = data[1]
-        g.gid = data[3]
-        g.users = data[4]
-        for _, user in ipairs(split(g.users, ",")) do
+        g.gid = data[2]
+        g.users = data[3]:gsub("\r", "")
+        local users = split(g.users, ",")
+        for _, user in ipairs(users) do
             if user == username then
-                ugroup[#ugroup] = {name = g.name, gid = g.users}
+                ugroup[#ugroup+1] = g
                 break
             end
         end
@@ -51,7 +53,7 @@ function k.user.match(username, password)
         user.primGid = data[4]
         user.home = data[6]
         user.shell = data[7]
-        if password == hashpw and username == username then
+        if password == hashpw and username == user.name then
             user.groups = k.user.groups(username)
             return true, user
         end
@@ -60,16 +62,23 @@ function k.user.match(username, password)
 end
 
 function k.user.auth()
-    k.printf("%s\n", dump(sha3))
-    k.printf("%s login: ", k.hostname)
-    local username = k.io.stdin:read()
-    k.printf("Password: ")
-    local password = sha3.sha512(k.getpass())
-    local match, user = k.user.match(username, password)
-    if match then
-        return user
-    else
-        return nil
+    while true do
+        k.printf("%s login: ", k.hostname)
+        local username = k.io.stdin:read()
+        k.printf("Password: ")
+        local password = tohex(sha3.sha512(k.getpass()))
+        local match, user = k.user.match(username, password)
+        if match then
+            local sid
+            repeat
+                sid = math.random(100, 64*1024)
+            until not k.sessions[sid]
+            k.sessions[sid] = user
+            k.current_process().sid = sid
+            return sid
+        else
+            k.printf("Bad Login\n")
+        end
     end
 end
 

@@ -21,32 +21,65 @@ k.printk(k.L_INFO, "user/exec")
 function k.loadfile(file, env)
     local buf = ""
     local chunk
-    local handle = k.rootfs.open(file, "r")
+    local handle = k.open(file, "r")
     repeat
-        chunk = k.rootfs.read(handle, math.huge)
+        chunk = k.read(handle, math.huge)
         buf = buf .. (chunk or "")
     until not chunk
-    k.rootfs.close(handle)
+    k.close(handle)
     return load(buf, "=" .. file, "t", env)
 end
 
-k.exec = function(file, args)
-    args = args or {}
-    table.insert(args, 1, file)
-    local thread = k.create_thread(function() 
-        local f = k.loadfile(file, k.current_process().env)()
-        if not f.main then return nil end
-        local r = f.main(args)
-        if r == nil then r = 0
-        elseif type(r) == "string" then r = tonumber(r) 
-        else r = 0 end
-        k.syscalls.exit(tonumber(r or "0") or 0)
-    end)
-    process = k.get_process(k.add_process())
-    process.cmdline = args
-    process:addThread(thread)
-    while not process.is_dead do
-        k.event.tick()
+function k.load_executable(file, env)
+    checkArg(1, file, "string")
+    checkArg(2, env, "table", "nil")
+    
+    local current = k.current_process()
+    local content = k.readfile(file)
+    local func,err = load(content, "="..file, "t", env or current.env)
+    if not func then
+        k.printk(k.L_DEBUG, "Load of executable failed")
+        k.printk(k.L_DEBUG, "Reason: %s", err)
+        return nil, k.errno.ENOEXEC
     end
-    return process.status()
+
+    local result = table.pack(xpcall(func, debug.traceback, args))
+    if not result[1] then
+        k.printk(k.L_NOTICE, "Lua error: %s", result[2])
+        return nil, "LUA ERROR"
+    end
+    local tbl = result[2]
+   
+    return function(args)
+        local result = table.pack(xpcall(tbl.main, debug.traceback, args))
+        if not result[1] then
+            k.printk(k.L_NOTICE, "Lua error: %s", result[2])
+            k.syscalls.exit(1)
+        else
+            k.syscalls.exit(0)
+        end
+    end
+end
+
+k.exec = function(file, args, wait)
+    checkArg(1, file, "string")
+    checkArg(2, args, "table", "nil")
+    checkArg(3, wait, "boolean", "nil")
+    args = args or {}
+    wait = wait == nil and true or wait
+
+    local process = k.get_process(k.add_process())
+    process.cmdline = {file, table.unpack(args)}
+    local exec = k.load_executable(file, process.env)
+    local thread = k.create_thread(function()
+        exec(args)
+    end)
+    -- process.cmdline = args
+    process:addThread(thread)
+    if wait == true then
+        while not process.is_dead do
+            coroutine.yield()
+        end
+        return process.status
+    end
 end

@@ -1,6 +1,6 @@
 --#ifdef SYSCALLS
-k.register_syscall("ioctl", function(handle, func, ...)
-    k.devfs.ioctl(k.rootfs.handles[handle].handle, func, ...)
+k.register_syscall("ioctl", function(...)
+    k.ioctl(...)
 end)
 --#endif
 --#include "user/sandbox.lua"

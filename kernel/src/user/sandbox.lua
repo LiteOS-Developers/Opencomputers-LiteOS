@@ -45,15 +45,22 @@ k.sandbox.new = function(opts)
     end
     new.error = function(l)
         local info = debug.getinfo(3)
-        t = info.short_src .. ":" .. tostring(info.currentline) .. ": " .. l .. "\n" .. debug.traceback()
-        k.io.stdout:writelines(t)
-        local thread = k.threading.getCurrent()
-        thread:stop()
+        k.printf("%s:%d: %s\n", info.short_src, tostring(info.currentline), l)
+        k.printf("\n")
+        for _, line in ipairs(split(debug.traceback(), "\n")) do
+            line = line:gsub("\t", "  ")
+            k.printf("%s\n", line)
+        end
+        local proc = k.current_process()
+        proc.is_dead = true
+        error("ERROR!")
         coroutine.yield()
     end
-    new.print = function(...)
-        k.printf(...)
+    new.printf = function(format, ...)
+        k.printf(format, ...)
     end
+
+    errno = deepcopy(k.errno)
 
     -- new.time = k.time
 
@@ -74,6 +81,8 @@ k.sandbox.new = function(opts)
     -- end
     -- end
 
+    
+
     new.computer = {
         uptime = computer.uptime,
         freeMemory = computer.freeMemory,
@@ -84,39 +93,14 @@ k.sandbox.new = function(opts)
         stdin = k.io.stdin
     }
 
-    local function modeTable(m)
-        checkArg(1, m, "string")
-        local mode = {}
-        for i = 1, unicode.len(m) do
-            mode[unicode.sub(m, i, i)] = true
-        end
-        return mode
-    end
-
-    function new.checkAttrMode(attrs, useGroup)
-        checkArg(1, attrs, "table")
-        mode = attrs.mode
-        assert(type(mode) == "string", "Bad Argument #1: table is Empty")
-        assert(mode:len() >= 9, "Expected 'mode' of length 9 got " .. tostring(mode:len()))
-        local result = {}
-        if ((not user.uid or tonumber(attrs.uid) == user.uid) and mode:sub(1, 1) == "r") or mode:sub(7, 7) == "r" then result.r = true end
-        if ((not user.uid or tonumber(attrs.uid) == user.uid) and mode:sub(2, 2) == "w") or mode:sub(8, 8) == "w" then result.w = true end
-        if ((not user.uid or tonumber(attrs.uid) == user.uid) and mode:sub(3, 3) == "x") or mode:sub(9, 9) == "x" then result.x = true end
-        if gid ~= nil and user.groups ~= nil then
-            new.print(dump(user))
-            if user.groups[gid] ~= nil then
-                if mode:sub(4, 4) == "r" then result.r = true end
-                if mode:sub(5, 5) == "w" then result.w = true end
-                if mode:sub(6, 6) == "x" then result.x = true end
-            end
-        end
-        return result
-    end
-
+    
     local yield = new.coroutine.yield
     function new.coroutine.yield(request, ...)
         local proc = k.current_process()
         local last_yield = proc.last_yield or computer.uptime()
+
+        local info = debug.getinfo(3)
+        -- k.printk(k.L_DEBUG, "%s:%.0f (%s)", info.short_src, info.currentline, info.name)
 
         if request == "syscall" then
             if computer.uptime() - last_yield > k.max_proc_time then
@@ -124,10 +108,19 @@ k.sandbox.new = function(opts)
                 proc.last_yield = computer.uptime()
             end
             
-            return k.perform_system_call(...)
+            return table.unpack(table.pack(k.perform_system_call(...)))
         end
         proc.last_yield = computer.uptime()
         return yield(request, ...)
+    end
+
+    function new.ioctl(fd, func, ...)
+        return table.unpack(table.pack(syscall("ioctl", fd, func, ...)))
+    end
+
+    function new.syscall(call, ...)
+        local data = table.unpack(table.pack(new.coroutine.yield("syscall", call, ...)))
+        return data
     end
     
     return new
