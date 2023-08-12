@@ -47,7 +47,6 @@ function k.create_fd(stream, fd)
 end
 
 function k.close(fd)
-    checkArg(1, fd, "number")
     if k.fds[fd] then
         k.fds[fd].stream.close(fd)
         k.fds[fd] = nil
@@ -66,10 +65,19 @@ function k.isOpen(fd)
 end
 
 function k.read(fd, c)
-    if k.fds[fd] then
-        return k.fds[fd].stream.read(c)
+    if k.fds[fd.fd] then
+        return k.fds[fd.fd].stream.read(c)
     end
+    error(string.format("Requested FileDescriptor does not exist %s", dump(fd)))
     return ""
+end
+
+function k.call(meth, fd, c)
+    if k.fds[fd] then
+        if not k.fds[fd].stream[meth] then return end
+        return k.fds[fd].stream[meth](c)
+    end
+    return nil
 end
 
 function k.seek(fd, off, whe)
@@ -77,4 +85,19 @@ function k.seek(fd, off, whe)
         return k.fds[fd].stream.seek(off, whe)
     end
     return nil
+end
+
+local function ebadf()
+    return nil, k.errno.EBADF
+end
+
+function k.fd_from_rwf(read, write, close)
+    checkArg(1, read, "function", write and "nil")
+    checkArg(2, write, "function", read and "nil")
+    checkArg(3, close, "function", "nil")
+
+    return {
+        read = read or ebadf, write = write or ebadf,
+        close = close or function() end
+    }
 end
