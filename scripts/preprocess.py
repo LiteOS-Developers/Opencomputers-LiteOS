@@ -53,7 +53,11 @@ class PreProcessor:
                 buf = io.StringIO()
 
                 p = self.__class__.__new__(self.__class__)
-                p.infile = open(result.groups()[1], "r")
+                try:
+                    p.infile = open(result.groups()[1], "r")
+                except FileNotFoundError as e:
+                    error("FileNotFound: %s" % e.filename)
+                    sys.exit(-1)
                 p.outfile = buf
                 p.defines = self.defines
                 p.process()

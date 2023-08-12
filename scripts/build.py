@@ -26,8 +26,6 @@ def build(repo, base):
         raise Exception("No build file for repo '%s'" % repo)
 
 if __name__ == "__main__":
-    
-
     base = os.path.abspath(__file__)
     base = os.path.sep.join(os.path.dirname(base).split(os.path.sep)[:-1])
 
@@ -35,13 +33,14 @@ if __name__ == "__main__":
     os.environ["BASE"] = base
 
     if len(sys.argv) >= 2:
-        if sys.argv[1] in REPOS:
-            repo = sys.argv[1]
-            build(repo, base)
-            sys.exit(0)
-        else:
-            print("No repo '%s' found" % sys.argv[1])
-            sys.exit(1)
+        args = sys.argv[1:]
+        for arg in args:
+            if arg in REPOS:
+                build(arg, base)
+            else:
+                print("No repo '%s' found" % arg)
+                sys.exit(1)
+        sys.exit(0)
 
     if os.path.isdir("build"):
         shutil.rmtree("build")
