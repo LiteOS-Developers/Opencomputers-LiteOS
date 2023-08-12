@@ -70,7 +70,11 @@ k.component.proxy = function(addr)
     if table.contains(k.component.components, addr ) then
         return k.component.components[addr].api
     end
-    return native.proxy(addr) 
+    local api = native.proxy(addr) 
+    for n, f in pairs(k.component.overwrite) do
+        api[n] = f
+    end
+    return api
 end
 
 k.component.type = function(addr)

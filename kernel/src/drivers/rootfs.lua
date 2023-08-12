@@ -18,225 +18,345 @@
 
 --#define DRV_ROOTFS
 k.printk(k.L_INFO, "drivers/rootfs")
-k.rootfs = {
-    mounts = {}
-}
+local mounts = {}
 
-local function getAddrAndPath(_path)
-    if _path:sub(1, 1) ~= "/" then _path = "/" .. _path end
-    if k.rootfs.mounts[_path] ~= nil then return k.rootfs.mounts[_path].addr, "/" end 
-    local parts = {}
-    
-    _path = string.sub(_path, 2, -1)
-    for part in string.gmatch(_path, "([^/]+)") do
-        table.insert(parts, part)
-    end
-    
-    local i = #parts
-    
-    repeat
-        local joined = ""
-        for j=1,i do 
-            joined = joined .."/" .. parts[j]   
-        end
 
-        if k.rootfs.mounts[joined] ~= nil then
-            local resPath = ""
-            for j=i+1,#parts do resPath = resPath .. "/"..parts[j] end
-            return k.rootfs.mounts[joined].addr, resPath
-        end
-        i = i - 1
-    until i == 0
-    return k.rootfs.mounts["/"].addr, _path
+local default_proc = { uid = 0, gid = 0 }
+local function cur_proc()
+    return k.current_process() or default_proc
 end
 
-local function parts(p)
-    if p:sub(1, 1) == "/" then p = p:sub(2, -1) end
-    local parts = {}
-    for part in string.gmatch(p, "([^/]+)") do
-        table.insert(parts, part)
+local function path_to_node(path)
+    path = k.check_absolute(path)
+
+    local current = k.current_process()
+    if current then
+        path = k.clean_path(current.root .. "/" .. path)
     end
-    return parts
-end
 
--------------------------------------------
-
-function k.rootfs.mount(addr, tPath, opts)
-    checkArg(1, addr, "string")
-    checkArg(2, tPath, "string")
-    checkArg(3, opts, "table", "nil")
-
-    if not k.rootfs.mounts["/"] then
-        if tPath ~= "/" then
-            return nil, "Please Mount rootfs first"
+    local mnt, rem = "/", path
+    for m in pairs(mounts) do
+        if path:sub(1, #m) == m and #m > #mnt then
+            mnt, rem = m, path:sub(#m+1)
         end
     end
 
-    k.rootfs.mounts[tPath] = {addr=addr,opts=opts}
+    if #rem == 0 then rem = "/" end
+
+    return mounts[mnt], rem or "/"
 end
 
-function k.rootfs.isMount (point)
-    checkArg(1, point, "string")
-    return k.rootfs.mounts[point] ~= nil
-end
+local function verify_fd(fd, dir)
+    checkArg(1, fd, "table")
 
-function k.rootfs.umount(point)
-    checkArg(1, point, "string")
-    
-    if not api.isMount(point) then
-        return false
+    if not (fd.fd and fd.node) then
+        error("bad argument #1 (file descriptor expected)", 2)
     end
-    k.rootfs.mounts[point] = nil
+
+    -- Casts both sides to booleans to ensure correctness when comparing
+    if (not not fd.dir) ~= (not not dir) then
+        error("bad argument #1 (cannot supply dirfd where fd is required, or vice versa)", 2)
+    end
+end
+
+-----------------------------------------------
+
+function k.du(path)
+    checkArg(1, path, "string")
+    local node, _ = path_to_node(path)
+    if not node.du then return nil, k.errno.ENOSYS end
+    return node:du()
+end
+
+function k.check_absolute(path)
+    checkArg(1, path, "string")
+
+    if path:sub(1, 1) == "/" then
+        return "/" .. table.concat(k.split_path(path), "/")
+
+    else
+        local current = k.current_process()
+        local cwd = current and current.cwd or "/"
+        return "/" .. table.concat(k.split_path(cwd .. "/" .. path), "/")
+    end
+end
+
+function k.move(from, to)
+    checkArg(1, from, "string")
+    checkArg(2, to, "string")
+    from = k.check_absolute(from)
+    to = k.check_absolute(to)
+    
+    from_node, from_remain = path_to_node(from)
+    to_node, to_remain = path_to_node(to)
+
+    if not from_node:exists(from_remain) then return nil, k.errno.ENOENT end
+    if to_node:exists(to_remain) then return nil, k.errno.EEXIST end
+    local to_segments = k.split_path(to_remain)
+    local to_parent = "/" .. table.concat(to_segments, "/", 1, #to_segments - 1)
+    if not to_node:exists(to_parent) then return nil, k.errno.ENOENT end
+
+    if from_node.address == to_node.address then
+        from_node:rename(from_remain, to_remain)
+    else
+        if to_node:stat(to_parent).mode & k.perm.FS_DIR == 0 then
+            return nil, k.errno.ENOTDIR
+        end
+        if to_node:stat(to_remain).mode & k.perm.FS_DIR ~= 0 then
+            return nil, k.errno.EISDIR
+        end
+        assert(false, "Operation not supported")
+    end
+end
+
+function k.remove(path)
+    checkArg(1, path, "string")
+    local node, remain = path_to_node(path)
+
+    if not node.remove then return nil, k.errno.ENOSYS end
+    return node:remove(remain)
+end
+
+
+function k.clean_path(path)
+    checkArg(1, path, "string")
+    return "/" .. table.concat(k.split_path(path), "/")
+end
+
+function k.mount(device, path)
+    checkArg(1, device, "string", "table")
+    checkArg(2, path, "string")
+    path = k.check_absolute(path)
+    local proxy = device
+    
+    if type(device) == "string" then
+        if not table.contains({"filesystem", "drive"}, k.component.type(device)) then
+            return nil, k.errno.ENOTBLK
+        end
+        local fs = k.fstypes[k.component.type(device)]
+        if not fs then
+            return nil, k.errno.EUNATCH
+        end
+        proxy = fs(device)
+        if not proxy then return nil, k.errno.EUNATCH end
+        proxy.address = device
+    end
+
+    proxy.mountType = proxy.mountType or "managed"
+    mounts[path] = proxy
+    if not proxy.address then
+        k.panic("Filesystem has no address")
+    end
+    if proxy.mount then proxy:mount(path) end
     return true
 end
 
-function k.rootfs.getAddress(path)
+function k.umount(path)
     checkArg(1, path, "string")
+    path = k.clean_path(path)
+    if not mounts[path] then
+        return nil, k.errno.EINVAL
+    end
 
-    local addr, _ = getAddrAndPath(path)
-    return addr
+    local node = mounts[path]
+    if node.unmount then
+        node:unmount(path)
+    end
+    mounts[path] = nil
+    return true
 end
 
-function k.rootfs.spaceUsed(path)
-    checkArg(1, path, "string")
-    local addr, _ = getAddrAndPath(path)
-    return k.component.invoke(addr, "spaceUsed")
-end
+local opened = {}
 
-function k.rootfs.open(path)
-    checkArg(1, path, "string")
-    checkArg(2, m, "string", "nil")
-    local addr, aPath = getAddrAndPath(path)
-    local handle = k.component.invoke(addr, "open", aPath, m)
-    return k.create_fd({
-        write = function(fd, buf)
-            return k.component.invoke(addr, "write", handle, buf)
-        end,
-        seek = function(wh, off)
-            return k.component.invoke(addr, "seek", handle, wh, off)
-        end,
-        read = function(c)
-            return k.component.invoke(addr, "read", handle, c)
+function k.open(file, mode)
+    checkArg(1, file, "string")
+    checkArg(2, mode, "string")
+    
+    local node, remain = path_to_node(file)
+    if not node.open then return nil, k.errno.ENOSYS end
+    
+    local exists = node:exists(remain)
+    local segs = k.split_path(remain)
+    local dir = "/" .. table.concat(segs, "/", 1, #segs - 1)
+    local base = segs[#segs]
+
+    modes = {}
+    for i=1,#mode,1 do
+        modes[mode:sub(i,i)] = true
+    end
+    
+    local stat, err
+    if not exists and (not modes.w and not modes.a) then
+        return nil, k.errno.ENOENT
+    elseif not exists and table.contains({"w", "a"}, mode) then
+        stat, err = node:stat(dir)
+    else
+        stat, err = node:stat(remain)
+    end
+
+    if not stat then return nil, err end
+
+    if not k.process_has_permission(cur_proc(), stat, "x") then
+        return nil, k.errno.EACCES
+    end
+    
+    local fd, err = node:open(remain, mode)
+    if not fd then return nil, err end
+
+    local stream = k.create_fd({
+        read = modes.r and (function(fmt)
+            checkArg(1, fmt, "string", "number")
+            if fmt == "*a" then
+                fmt = stat.size
+            elseif type(fmt) == "string" then
+                return nil, k.errno.EINVAL
+            end
+            return node:read(fd, tonumber(fmt or "1") or 1)
+        end) or nil,
+        write = modes.w and (function(buf)
+            checkArg(1, buf, "string")
+            return node:write(fd, buf)
+        end) or nil,
+        seek = function(off, wh)
+            checkArg(1, off, "number")
+            checkArg(2, wh, "string")
+            return node:seek(fd, off, wh)
         end,
         close = function()
-            k.component.invoke(addr, "close", handle)
+            return node:close(fd)
         end
     })
+    
+    local ret = { fd = stream, node = stream, refs = 1 }
+    opened[ret] = true
+    return ret
 end
 
-function k.rootfs.seek(fd, wh, off)
-    checkArg(1, fd, "number")
-    checkArg(2, _whence, "number")
-    checkArg(3, offset, "number")
-    if not k.isOpen(fd) then return nil, k.errno.EBADFD end
-    return k.seek(fd, wh, off)
+function k.ioctl(fd, op, ...)
+    verify_fd(fd)
+    checkArg(2, op, "string")
+
+    if op == "setcloexec" then
+        fd.cloexec = not not ...
+        return true
+    end
+    if not fd.node.ioctl then return nil, k.errno.ENOSYS end
+    return fd.node.ioctl(fd.fd, op, ...)
 end
 
-function k.rootfs.makeDirectory(path)
+local stat_defaults = {
+    dev = -1, ino = -1, mode = 0x81FF, nlink = 1,
+    uid = 0, gid = 0, rdev = -1, size = 0, blksize = 2048,
+    atime = 0, ctime = 0, mtime = 0
+}
+
+function k.list(path)
     checkArg(1, path, "string")
-    local addr, aPath = getAddrAndPath(path)
-    return k.component.invoke(addr, "makeDirectory", aPath)
+    path = k.check_absolute(path)
+    local node, remain = path_to_node(path)
+    if not node.list then return nil, k.errno.ENOSYS end
+    if not node:exists(remain) then return nil, k.errno.ENOENT end
+    local stat = node:stat(remain)
+    if not k.process_has_permission(cur_proc(), stat, "r") then
+        return nil, k.errno.EACCES
+    end
+    return node:list(remain)
 end
 
-function k.rootfs.exists(path)
+function k.stat(path)
     checkArg(1, path, "string")
-    local addr, aPath = getAddrAndPath(path)
-    return k.component.invoke(addr, "exists", aPath)
+    local node, remain = path_to_node(path)
+    if not node.stat then return nil, k.errno.ENOSYS end
+    local statx, errno = node:stat(remain)
+    if not statx then return nil, errno end
+    for key, val in pairs(statx) do
+        statx[key] = statx[key] or val
+    end
+    return statx
 end
-
-function k.rootfs.isReadOnly(path)
+function k.mkdir(path)
     checkArg(1, path, "string")
-    local addr, _ = getAddrAndPath(path)
-    return k.component.invoke(addr, "isReadOnly")
+    local node, remain = path_to_node(path)
+    if not node.mkdir then return nil, k.errno.ENOSYS end
+    if node:exists(remain) then return nil, k.errno.EEXIST end
+
+    local segments = k.split_path(remain)
+    local parent = "/" .. table.concat(segments, "/", 1, #segments - 1)
+
+    local statx = node:stat(parent)
+    if not stat then return nil, k.errno.ENOENT end
+    if not k.process_has_permission(cur_proc(), stat, "w") then
+        return nil, k.errno.EACCES
+    end
+
+    local umask = (cur_proc().umask or 0) ~ 511
+    local done, failed = node:mkdir(remain)
+    if not done then return nil, failed end
+    if node.chmod then node:chmod(remain, ((mode or stat.mode) & umask)) end
+
+    return done, failed
 end
 
-function k.rootfs.write(fd, buf)
-    checkArg(1, fd, "number")
-    checkArg(2, buf, "string")
-    if not k.isOpen(fd) then return nil, k.errno.ECLOSED end
-    return k.write(fd)
+function k.link(...)
+    error("NotImplemented: k.link(...)")
+end
+function k.unlink(...)
+    error("NotImplemented: k.unlink(...)")
 end
 
-function k.rootfs.spaceTotal(path)
+function k.chmod(path, mode)
     checkArg(1, path, "string")
-    local addr, _ = getAddrAndPath(path)
-    return k.component.invoke(addr, "spaceTotal")
+    checkArg(2, mode, "number")
+
+    local node, remain = path_to_node(path)
+    if not node.chmod then return nil, k.errno.ENOSYS end
+    if not node:exists(remain) then return nil, k.errno.ENOENT end
+
+    local stat = node:stat(remain)
+    if not k.process_has_permission(cur_proc(), stat, "w") then
+        return nil, k.errno.EACCES
+    end
+
+    -- only preserve the lower 12 bits
+    mode = (mode & 0x1FF)
+    return node:chmod(remain, mode)
 end
 
-function k.rootfs.isDirectory(path)
+function k.chown(path, uid, gid)
     checkArg(1, path, "string")
-    local addr, aPath = getAddrAndPath(path)
-    return k.component.invoke(addr, "isDirectory", aPath)
+    checkArg(2, uid, "number")
+    checkArg(3, gid, "number")
+
+    local node, remain = path_to_node(path)
+    if not node.chown then return nil, k.errno.ENOSYS end
+    if not node:exists(remain) then return nil, k.errno.ENOENT end
+
+    local stat = node:stat(remain)
+    if not k.process_has_permission(cur_proc(), stat, "w") then
+        return nil, k.errno.EACCES
+    end
+
+    return node:chown(remain, uid, gid)
 end
 
-function k.rootfs.rename(from, to)
-    checkArg(1, from, "string")
-    checkArg(2, to, "string")
-    local addr, aFrom = getAddrAndPath(path)
-    local addr2, aTo = getAddrAndPath(path)
-    if addr ~= addr2 then return nil, k.errno.EDEVSWT end
-    return k.component.invoke(addr, "rename", aFrom, aTo)
+function k.mounts()
+    return mounts
 end
 
-function k.rootfs.list(path)
+function k.isDir(path)
     checkArg(1, path, "string")
-    local addr, aPath = getAddrAndPath(path)
-    return k.component.invoke(addr, "list", aPath)
+    local stat = k.stat(path)
+    if not stat then return false, k.errno.ENOENT end
+    return stat.mode & k.perm.FS_DIR ~= 0
 end
 
-function k.rootfs.lastModified(path)
-    checkArg(1, path, "string")
-    local addr, aPath = getAddrAndPath(path)
-    return k.component.invoke(addr, "lastModified", aPath)
-end
+k.event.listen("shutdown", function()
+    for fd in pairs(opened) do
+      fd.refs = 1
+      k.close(fd)
+    end
 
-function k.rootfs.getLabel(path)
-    checkArg(1, path, "string")
-    local addr, aPath = getAddrAndPath(path)
-    return k.component.invoke(addr, "getLabel")
-end
-function k.rootfs.remove(path)
-    checkArg(1, path, "string")
-    local addr, aPath = getAddrAndPath(path)
-    return k.component.invoke(addr, "remove", aPath)
-end
-
-function k.rootfs.close(fd)
-    checkArg(1, fd, "number")
-    if not k.isOpen(fd) then return nil, k.errno.EBADFD end
-    k.close(fd)
-end
-
-function k.rootfs.size(path)
-    checkArg(1, path, "string")
-    local addr, aPath = getAddrAndPath(path)
-    return k.component.invoke(addr, "size", aPath)
-end
-
-function k.rootfs.read(fd, count)
-    checkArg(1, fd, "number")
-    checkArg(2, count, "number")
-    if not k.isOpen(fd) then return nil, k.errno.ECLOSED end
-    return k.read(fd, count)
-end
-
-function k.rootfs.setLabel(path, value)
-    checkArg(1, path, "string")
-    checkArg(2, value, "string")
-    local addr, aPath = getAddrAndPath(path)
-    return k.component.invoke(addr, "setLabel", value)
-end
-
----------------------------------------
-
-function k.rootfs.getAttrs(path)
-    checkArg(1, path, "string")
-    checkArg(2, value, "string")
-    local addr, aPath = getAddrAndPath(path)
-    return k.component.invoke(addr, "getAttrs", aPath)
-end
-
-function k.rootfs.ensureOpen(fd)
-    checkArg(1, fd, "number")
-    return k.isOpen(fd)
-end
+    for path in pairs(mounts) do
+      k.unmount(path)
+    end
+end)
