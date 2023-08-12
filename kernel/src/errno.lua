@@ -21,7 +21,7 @@ do
     ENOTTY = 25,
     ENOSYS = 38,
     EUNATCH = 49,
-    EBADFD = 77
+    EBADFD = 77,
     ELIBEXEC = 83,
     ENOPROTOOPT = 92,
     ENOTSUP = 95,

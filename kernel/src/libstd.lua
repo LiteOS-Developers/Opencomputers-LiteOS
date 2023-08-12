@@ -68,6 +68,12 @@ function table.merge(p, s)
     end
     return p
 end
+table.contains = function(t, val)
+    for _, v in pairs(t) do
+        if v == val then return true end
+    end
+    return false
+end
 
 function split(inputstr, sep)
     checkArg(1, inputstr, "string")
