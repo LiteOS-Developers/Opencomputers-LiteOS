@@ -26,10 +26,10 @@ function k.event.listen(e, func)
     checkArg(1, e, "string")
     checkArg(2, func, "function")
     local id
+    if not k.event.listeners[e] then k.event.listeners[e] = {} end
     repeat
         id = math.random(0, math.pow(2, 32)-1)
     until not k.event.listeners[e][id]
-    if not k.event.listeners[id] then k.event.listeners[e] = {} end
     k.event.listeners[e][id] = func
     return id
 end
@@ -67,9 +67,16 @@ function k.event.tick()
     k.event.push(event)
 end
 
+function k.pushSignal(sig, ...)
+    assert(sig ~= nil, "bad argument #1 to 'pushSignal' (value expected, got nil)")
+
+    computer.pushSignal(sig, ...)
+    return true
+end
+
 function k.pullSignal(timeout)
     local sig = table.pack(computer.pullSignal(timeout))
     if sig.n == 0 then return end
     k.event.push(sig)
     return table.unpack(sig, 1, sig.n)
-  end
+end

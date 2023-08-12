@@ -18,10 +18,11 @@
 --#define KERNEL
 local k = {}
 k.slowDown = 0.5
-k.boottime = computer.uptime()
+k.boottime =  computer.uptime()
 k.hlt = function() while true do computer.pullSignal() end end
 --#include "libstd.lua"
 --#include "preload/main.lua"
+--#include "errno.lua"
 --#include "event.lua"
 --#include "uuid.lua"
 --#include "fd.lua"
@@ -30,6 +31,7 @@ k.hlt = function() while true do computer.pullSignal() end end
 --#include "init/main.lua"
 --#include "scheduler/main.lua"
 --#include "package.lua"
+--#include "syscalls.lua"
 --#include "user/main.lua"
 
 k.scheduler_loop()
