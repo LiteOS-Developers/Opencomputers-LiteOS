@@ -1,69 +1,36 @@
-local api = {}
+local package = {}
+package.loaded = {}
+package.searchPaths = {}
 
-api.packages = {}
-api.searchPaths = {}
-
-local fs = k.service.getService("filesystem")
-
-api.load = function(name, api)
-    checkArg(1, name, "string")
-    checkArg(2, api, "table")
-    if api.packages == nil then api.packages = {} end
-    api.packages[name] = api
+package.addLibraryPath = function(path)
+    checkArg(1, path, "string")
+    table.insert(package.searchPaths, path)
 end
 
-api.loadPackage = function(pName)
-    checkArg(1, pName, "string")
-    if not k.devices then
-        return nil, "SystemError: Cannot find devices. The OS started may not correctly!"
+package.require = function(name)
+    if name:sub(1, 1) == "/" then
+        local res, e = dofile(name)
+        if not res then return nil, e end
+        package.loaded[name] = res
+        return package.loaded[name]
     end
-
-    if api.packages[pName] ~= nil then
-        return api.packages[pName]
+    if package.loaded[name] ~= nil then
+        return package.loaded[name]
     end
-    for _, v in pairs(api.searchPaths) do
-        local rPath = v:gsub("?", pName)
-        if fs.isFile(rPath) then
-            local file = fs.open(rPath, "r")
-            local data = ""
-            local content
-            repeat
-                content = fs.read(file, math.huge)
-                if content ~= nil then
-                    data = data .. content
-                end
-            until not content
-            fs.close(file)
-            
-            -- error(data)
-            local l, e = load(data, "=" .. rPath)
-            if e ~= nil then
-                k.panic(e .. "\n" .. debug.traceback())
-            end
-            if l == nil then
-                k.panic(dump(e))
-            end
-            
-            -- _G.error(pName)
-            api.packages[pName] = l()
-            --_G.write(pName .. " " .. dump(_G.packages[pName]))  
-
-            return api.packages[pName]
+    for _, v in pairs(package.searchPaths) do
+        local rPath = v:gsub("?", name)
+        if filesystem.isFile(rPath) then
+            local res, e = dofile(rPath)
+            if not res then return nil, e end
+            package.loaded[name] = res
+            return package.loaded[name]
         end
     end
-    k.panic("Failed to Load Module: " .. pName)
-    return nil
+    return nil, "Package '".. name .. "' not found"
 end
 
-api.addLibraryPath = function(path)
-    checkArg(1, path, "string")
-    table.insert(api.searchPaths, path)
-end
+package.addLibraryPath("/usr/lib/?.lua")
+package.addLibraryPath("/usr/lib/?/init.lua")
+package.addLibraryPath("/usr/lib/?/?.lua")   
 
-api.addLibraryPath("/usr/lib/?.lua")
-api.addLibraryPath("/usr/lib/?/init.lua")
-api.addLibraryPath("/usr/lib/?/?.lua")   
-
-api.require = api.loadPackage
-
-return api
+return package
