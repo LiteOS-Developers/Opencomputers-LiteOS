@@ -25,12 +25,15 @@ k.io = {}
 k.readfile = function(path)
     local data = ""
     local chk
-    local file = k.rootfs.open(path, "r")
+    local file, e = k.open(path, "r")
+    if not file then
+        error(string.format("Cannot open file %s: %d", path, e))
+    end
     repeat
-        chk = k.rootfs.read(file, math.huge)
+        chk = k.read(file, math.huge)
         data = data .. (chk or "")
     until not chk
-    k.rootfs.close(file)
+    k.close(file)
     return data
 end
 

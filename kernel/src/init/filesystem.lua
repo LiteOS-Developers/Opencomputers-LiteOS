@@ -19,15 +19,11 @@
 do
     k.printk(k.L_INFO, "init/filesystem")
     k.printk(k.L_DEBUG, "Mounting RootFS")
-    k.rootfs.mount(computer.getBootAddress(), "/", {})
-    k.printk(k.L_DEBUG, "Mounting TempFS")
-    k.rootfs.mount(computer.tmpAddress(), "/tmp", {})
+    k.mount(computer.getBootAddress(), "/")
     --#ifdef DRV_DEVFS
-    k.printk(k.L_DEBUG, "Mounting DevFS")
-    k.rootfs.mount(k.devfs.addr, "/dev", {})
     --#endif
     for addr, type in component.list("filesystem") do
         k.printk(k.L_DEBUG, "Mounting %s", addr:sub(1,3))
-        k.rootfs.mount(addr, "/mnt/" .. addr:sub(1,3), {})
+        k.mount(addr, "/mnt/" .. addr:sub(1,3))
     end
 end
