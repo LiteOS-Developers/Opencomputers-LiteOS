@@ -32,6 +32,37 @@ function k.get_process(rpid)
     return processes[rpid]
 end
 
+function k.is_pgroup(id)
+    return not not (processes[id] and processes[id].pgid == id)
+end
+
+function k.get_pids()
+    local procs = {}
+    for ppid in pairs(processes) do
+        procs[#procs + 1] = ppid
+    end
+    return
+end
+
+  -- return all the PIDs in a process group
+function k.pgroup_pids(id)
+    local result = {}
+    if not k.is_pgroup(id) then return result end
+
+    for pid, proc in pairs(processes) do
+        if proc.pgid == id then
+            result[#result+1] = pid
+        end
+    end
+    return result
+end
+
+function k.remove_process(pid)
+    checkArg(1, pid, "number")
+    processes[pid] = nil
+    return true
+end
+
 function k.current_process()
     return processes[current]
 end
@@ -41,6 +72,7 @@ local default = {n = 0}
 
 function k.scheduler_loop()
     last_yield = 0
+    local last_time = os.time()
     while processes[1] do
         k.pullSignal(0.05)
         local deadline = math.huge
@@ -69,7 +101,7 @@ function k.scheduler_loop()
                     process:resume(table.unpack(signal, 1, signal.n))
                     if not next(process.threads) then
                         process.is_dead = true
-
+                        
                         -- close all open files
                         for _, fd in pairs(process.fds) do
                             k.close(fd)
@@ -86,6 +118,7 @@ function k.scheduler_loop()
                     process.ppid = 1
                 end
             end
+            -- k.printk(k.L_DEBUG, "PID: %f %s", process.runtime, dump(process.cmdline))
         end
     end
 end

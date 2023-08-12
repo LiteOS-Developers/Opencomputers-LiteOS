@@ -56,6 +56,7 @@ end
 
 local thread = {}
 
+
 function thread:resume(sig, ...)
     if sig and #self.queue < 256 then
         table.insert(self.queue, table.pack(sig, ...))
@@ -88,15 +89,22 @@ function thread:resume(sig, ...)
         result = table.pack(coroutine.resume(self.coro))
     end
 
+
     -- first return is a boolean, we don't need that
     if type(result[1]) == "boolean" then
+        if not result[1] then
+            k.printk(k.L_EMERG, result[2])
+        else
+            -- k.printk(k.L_EMERG, dump(k.current_process().cmdline))
+        end
+
         table.remove(result, 1)
         result.n = result.n - 1
     end
 
     if coroutine.status(self.coro) == "dead" then
         if k.cmdline.log_process_deaths then
-            k.printk(k.L_DEBUG, "thread died: %s", result[1])
+            k.printk(k.L_DEBUG, "thread died")
         end
         return 1
     end
