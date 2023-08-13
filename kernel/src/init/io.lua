@@ -25,9 +25,11 @@ k.io = {}
 k.readfile = function(path)
     local data = ""
     local chk
+    -- error(dump(path))
     local file, e = k.open(path, "r")
+
     if not file then
-        error(string.format("Cannot open file %s: %d", path, e))
+        return nil, e
     end
     repeat
         chk = k.read(file, math.huge)
@@ -39,14 +41,14 @@ end
 
 k.io.stdout = k.buffer.new("w", {
     write = function(self, buf)
-        k.printf(buf)
+        k.printf(buf .. "\n")
     end
 })
 k.io.stdout:setvbuf("no")
 k.io.stderr = k.buffer.new("w", {
     write = function(self, buf)
         local old, _ = k.gpu.setForeground(0xF00000)
-        k.printf(buf)
+        k.printf(buf .. "\n")
         k.gpu.setForeground(old, _)
     end
 })

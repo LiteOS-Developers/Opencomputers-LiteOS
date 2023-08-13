@@ -46,14 +46,12 @@ k.sandbox.new = function(opts)
     new.error = function(l)
         local info = debug.getinfo(3)
         k.printf("%s:%d: %s\n", info.short_src, tostring(info.currentline), l)
-        k.printf("\n")
         for _, line in ipairs(split(debug.traceback(), "\n")) do
             line = line:gsub("\t", "  ")
             k.printf("%s\n", line)
         end
         local proc = k.current_process()
         proc.is_dead = true
-        error("ERROR!")
         coroutine.yield()
     end
     new.printf = function(format, ...)

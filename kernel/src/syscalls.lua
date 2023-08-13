@@ -47,19 +47,7 @@ function k.syscalls.getegid()
     return cur and cur.egid or 0
 end
 
-function k.syscalls.mount(dev, target)
-    checkArg(1, dev, "string")
-    checkArg(2, target, "string")
-    if dev == "devfs" then
-        -- k.mount(k.devfs.addr, "/dev", {})
-    elseif dev == "procfs" then
-
-    elseif dev == "tempfs" then
-        k.mount(computer.tmpAddress(), "/tmp")
-    else
-        k.printk(k.L_NOTICE, "Invalid device for syscall 'mount' %s", dev)
-    end
-end
+k.syscalls.mount = k.mount
 
 function k.syscalls.exit(status)
     checkArg(1, status, "number")
@@ -284,7 +272,7 @@ function k.syscalls.execve(path, args, env)
     local current = k.current_process()
     
     local stat = k.stat(path)
-    if not k.process_has_permission(cur_proc(), stat, "x") then
+    if not k.process_has_permission(cur_proc(), stat or {}, "x") then
         k.printk(k.L_WARNING, "No Permission for %s", path)
         return nil, k.errno.EACCES
     end

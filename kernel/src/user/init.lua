@@ -19,7 +19,6 @@
 k.printk(k.L_INFO, "user/init")
 -- local user = k.user.auth()
 
-
 k.exec("/sbin/init.lua", nil, false)
 k.printk(k.L_INFO, "Kernel successfully loaded")
 

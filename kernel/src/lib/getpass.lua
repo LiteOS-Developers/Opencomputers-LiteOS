@@ -16,6 +16,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]--
 
+k.printk(k.L_INFO, "lib/getpass")
+
 k.getpass = function()
     local line = ""
 

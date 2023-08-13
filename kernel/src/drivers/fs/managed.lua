@@ -68,11 +68,7 @@ do
         for i=#files, 1, -1 do
             if is_attribute(files[i]) then table.remove(files, i) end
         end
-    
-        index = index + 1
-        if files and files[index] then
-            return { name = files[index]:gsub("/", "") }
-        end
+        return files
     end
 
     function provider:stat(path)
@@ -239,7 +235,7 @@ do
     end
     local fs_mt = { __index = provider }
 
-    k.register_fstype("filesystem", function(comp)
+    k.register_fstype("managed", function(comp)
         if type(comp) == "table" and comp.type == "filesystem" then
             return setmetatable({fs = comp, address = comp.address:sub(1,8)}, fs_mt)
     
@@ -248,10 +244,10 @@ do
         end
     end)
     
-    k.register_fstype("tmpfs", function(t)
-        if t == "tmpfs" then
+    k.register_fstype("tempfs", function(t)
+        if t == "tempfs" then
             local node = k.fstypes.managed(computer.tmpAddress())
-            node.address = "tmpfs"
+            node.address = "tempfs"
             return node
         end
     end)

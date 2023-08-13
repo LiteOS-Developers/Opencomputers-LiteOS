@@ -130,22 +130,24 @@ function k.mount(device, path)
     local proxy = device
     
     if type(device) == "string" then
-        if not table.contains({"filesystem", "drive"}, k.component.type(device)) then
-            return nil, k.errno.ENOTBLK
+        local type_ = component.type(device)
+        if not type_ then
+            if k.fstypes[device] then
+                proxy = k.fstypes[device](device)
+            else
+                return nil, k.errno.ENODEV
+            end
+        elseif type_ == "filesystem" then
+            proxy = k.fstypes["managed"](device)
+        else
+            return nil, k.errno.ENODEV
         end
-        local fs = k.fstypes[k.component.type(device)]
-        if not fs then
-            return nil, k.errno.EUNATCH
-        end
-        proxy = fs(device)
-        if not proxy then return nil, k.errno.EUNATCH end
-        proxy.address = device
     end
 
     proxy.mountType = proxy.mountType or "managed"
     mounts[path] = proxy
     if not proxy.address then
-        k.panic("Filesystem has no address")
+        k.panic(string.format("Filesystem %s has no address", dump(device)))
     end
     if proxy.mount then proxy:mount(path) end
     return true
@@ -174,12 +176,10 @@ function k.open(file, mode)
     
     local node, remain = path_to_node(file)
     if not node.open then return nil, k.errno.ENOSYS end
-    
     local exists = node:exists(remain)
     local segs = k.split_path(remain)
     local dir = "/" .. table.concat(segs, "/", 1, #segs - 1)
     local base = segs[#segs]
-
     modes = {}
     for i=1,#mode,1 do
         modes[mode:sub(i,i)] = true
@@ -260,7 +260,15 @@ function k.list(path)
     if not k.process_has_permission(cur_proc(), stat, "r") then
         return nil, k.errno.EACCES
     end
-    return node:list(remain)
+    local files = node:list(remain)
+    for dir, _ in pairs(mounts) do
+        local segments = k.split_path(dir)
+        local parent = "/" .. table.concat(segments, "/", 1, #segments - 1)
+        if parent == path then files[#files+1] = segments[#segments] end
+        -- k.printf("%s %s %s\n", parent, path, segments[#segments])
+    end
+    -- k.printf("%s\n", dump(table.keys(mounts)))
+    return files
 end
 
 function k.stat(path)

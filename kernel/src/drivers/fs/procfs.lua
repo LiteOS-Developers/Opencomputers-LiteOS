@@ -4,7 +4,7 @@
 --#define DRV_PROCFS
 k.printk(k.L_INFO, "drivers/fs/procfs")
 local provider = {
-    addr = k.uuid.next(),
+    address = "procfs",
     files = {}
 }
 

@@ -7,7 +7,7 @@ k.devfs = {}
 
 do
     local provider = {}
-    provider.address = k.uuid.next()
+    provider.address = "devfs"
     local devices = {}
 
     function k.devfs.register_device(path, device)
@@ -54,18 +54,13 @@ do
         end
     end
 
+    k.devfs.lookup = path_to_node
+
     k.devfs.register_device("/", {    
         list = function(_)
             local devs = {}
             for k in pairs(devices) do if k ~= "/" then devs[#devs+1] = k end end
-            local fd =  { devs = devs, i = 0 }
-            fd.i = fd.i + 1
-            if fd.devs and fd.devs[fd.i] then
-                return { inode = -1, name = fd.devs[fd.i] }
-        
-            else
-                fd.devs = nil
-            end
+            return devs
         end,
     
         stat = function()
