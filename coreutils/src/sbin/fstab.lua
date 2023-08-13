@@ -5,7 +5,7 @@ local function load_fstab()
         local chunk
         repeat
             chunk = syscall("read", fd, math.huge)
-            inittab = inittab .. (chunk or "")
+            fstab = fstab .. (chunk or "")
         until not chunk
         syscall("close", fd)
     end
@@ -15,7 +15,7 @@ local function load_fstab()
         for _, line in ipairs(lines) do
             local splitted = split(line, " ")
             local type = splitted[1]
-            local trg = table.concat(splitted[2], " "):gsub("\r", "")
+            local trg = table.concat(splitted, " ", 2):gsub("\r", "")
             parsed[#parsed + 1] = {
                 type=type,
                 trg = trg
@@ -27,8 +27,12 @@ end
 
 return {
     main = function(...)
-        -- local fstab = load_fstab()
-        -- printf("FSTAB: \n%s\n", dump(fstab))
-        
+        local fstab = load_fstab()
+        for _, entry in ipairs(fstab) do
+            local success, errno = syscall("mount", entry.type, entry.trg)
+            if not success then
+                printf("Cannot mount %s: %d\n", entry.trg, errno or 0)
+            end
+        end
     end
 }
