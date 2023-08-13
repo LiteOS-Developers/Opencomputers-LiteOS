@@ -95,7 +95,7 @@ end
 local function switch_runlevel(runlevel)
     printf("init: Switch to runlevel %d\n", runlevel)
     Runlevel = runlevel
-  
+    
     for id, entry in pairs(active_entries) do
         if type(id) == "string" then
             if not entry.runlevels[runlevel] then
@@ -103,7 +103,7 @@ local function switch_runlevel(runlevel)
             end
         end
     end
-  
+    
     for _, entry in pairs(inittab) do
         if entry.runlevels[runlevel] then
             start_service(entry)
@@ -126,7 +126,6 @@ return {
             syscall("exit", 1)
         end
         printf("init: Kinit is starting\n")
-
         inittab = load_inittab()
         switch_runlevel(1) -- Single user mode
 
