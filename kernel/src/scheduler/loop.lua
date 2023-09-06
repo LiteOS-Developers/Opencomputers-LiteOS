@@ -100,7 +100,6 @@ function k.scheduler_loop()
                 if computer.uptime() >= process:deadline() or #signal > 0 then
                     process:resume(table.unpack(signal, 1, signal.n))
                     if not next(process.threads) then
-                        process.is_dead = true
                         
                         -- close all open files
                         for _, fd in pairs(process.fds) do
@@ -111,14 +110,16 @@ function k.scheduler_loop()
                         for id in pairs(process.handlers) do
                             k.remove_signal_handler(id)
                         end
+                        process.is_dead = true
+                        --processes[process.pid] = nil
                     end
                 end
+                -- k.printk(k.L_DEBUG, "Running PID: %d %s %s", process.pid, dump(process.cmdline), tostring(process.is_dead))
             else
                 if not processes[process.ppid] then
                     process.ppid = 1
                 end
             end
-            -- k.printk(k.L_DEBUG, "PID: %f %s", process.runtime, dump(process.cmdline))
         end
     end
 end

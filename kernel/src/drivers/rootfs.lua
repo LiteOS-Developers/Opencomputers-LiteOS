@@ -193,15 +193,19 @@ function k.open(file, mode)
     else
         stat, err = node:stat(remain)
     end
-
-    if not stat then return nil, err end
+    if not stat then
+        return nil, err or -2
+    end
 
     if not k.process_has_permission(cur_proc(), stat, "x") then
         return nil, k.errno.EACCES
     end
     
-    local fd, err = node:open(remain, mode)
-    if not fd then return nil, err end
+    local fd, err, sys_e = node:open(remain, mode)
+    if not fd then
+        k.printk(k.L_NOTICE, "rootfs:206 %s %s %s", tostring(exists), remain, sys_e or "<SYS_e>")
+        return nil, err or -2
+    end
 
     local stream = k.create_fd({
         read = modes.r and (function(fmt)
@@ -224,12 +228,15 @@ function k.open(file, mode)
         end,
         close = function()
             return node:close(fd)
+        end,
+        ioctl = function(call, ...)
+            return table.unpack({node:ioctl(fd, call, ...)})
         end
     })
     
-    local ret = { fd = stream, node = stream, refs = 1 }
+    local ret = { fd = stream, node = k.node(stream), refs = 1 }
     opened[ret] = true
-    return ret
+    return ret, 0
 end
 
 function k.ioctl(fd, op, ...)
@@ -241,7 +248,7 @@ function k.ioctl(fd, op, ...)
         return true
     end
     if not fd.node.ioctl then return nil, k.errno.ENOSYS end
-    return fd.node.ioctl(fd.fd, op, ...)
+    return table.unpack({fd.node.ioctl(op, ...)})
 end
 
 local stat_defaults = {

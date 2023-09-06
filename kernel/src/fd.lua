@@ -47,9 +47,11 @@ function k.create_fd(stream, fd)
 end
 
 function k.close(fd)
-    if k.fds[fd] then
-        k.fds[fd].stream.close(fd)
-        k.fds[fd] = nil
+    if k.fds[fd.fd] then
+        k.fds[fd.fd].stream.close(fd.fd)
+        k.fds[fd.fd] = nil
+    else
+        k.printf("No open file with fd found %s\n", dump(fd))
     end
 end
 
@@ -78,6 +80,10 @@ function k.call(meth, fd, c)
         return k.fds[fd].stream[meth](c)
     end
     return nil
+end
+
+function k.node(fd)
+    return k.fds[fd].stream
 end
 
 function k.seek(fd, off, whe)

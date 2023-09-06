@@ -35,15 +35,16 @@ for name,v in pairs(k) do
     end
 end
 
+
+
 function k.printk(level, fmt, ...)
     local message = string.format("[%08.02f] %s: ", computer.uptime() - k.boottime, reverse[level]) .. string.format(fmt, ...)
 
     if level <= k.cmdline.loglevel then
         k.printf("%s\n", message)
-        -- lib.log_to_screen(message)
+    else
+        k.debug(message .. "\n")
     end
-
-    -- log_to_buffer(message)
 end
 k.printk(k.L_INFO, "preload")
 
@@ -51,7 +52,12 @@ k.printk(k.L_INFO, "preload")
 local pullSignal = computer.pullSignal
 function k.panic(reason)
     k.printk(k.L_EMERG, "Kernel Panic")
-    k.printk(k.L_EMERG, "Reason: %s", reason)
+    local lines = split(reason, "\n")
+    k.printk(k.L_EMERG, "Reason: %s", lines[1])
+    local i
+    for i = 2,#lines,1 do
+        k.printf(k.L_EMERG, lines[i])
+    end
     k.printk(k.L_EMERG, "#### stack traceback ####")
     for line in debug.traceback():gmatch("[^\n]+") do
         if line ~= "stack traceback:" then

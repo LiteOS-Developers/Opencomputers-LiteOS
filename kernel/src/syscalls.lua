@@ -24,9 +24,16 @@ function k.perform_system_call(call, ...)
     if not k.syscalls[call] then
         return nil, k.errno.ENOSYS
     end
-    local result = table.pack(pcall(k.syscalls[call], ...))
+    local result = table.pack(xpcall(k.syscalls[call], debug.traceback, ...))
     if not result[1] then
-        error(string.format("Error during syscall %s: %s", call, result[2]))
+        local lines = split(result[2], "\n")
+        k.printf("Error during syscall %s: %s\n", call, lines[1])
+        for i = 2,#lines,1 do
+            k.printf("%s\n", lines[i])
+        end
+        k.printf("\n")
+        k.printf("\nOS in crash state. Stopping executing...\n")
+        k.hlt()
     end
     return table.unpack(result, result[1] and 2 or 1, result.n)
 end
@@ -70,9 +77,12 @@ function k.syscalls.getSession(sid)
     if not sess then
         sid = k.user.auth()
     end
-    local sid =  sess or k.sessions[k.current_process().sid]
-    k.printf("%f\n", #k.sessions)
-    return k.sessions[sid]
+    local user = sess and sess or k.sessions[k.current_process().sid]
+    return user
+end
+
+function k.syscalls.name()
+    return k.hostname
 end
 
 function k.syscalls.fork(f)
@@ -92,17 +102,18 @@ function k.syscalls.wait(pid, nohang, untraced)
         return nil, k.errno.ESRCH
     end
 
-    if k.get_process(pid).ppid ~= k.current_process().pid then
+    if k.get_process(pid).ppid ~= cur_proc().pid then
         return nil, k.errno.ECHILD
     end
-
+    
     local proc = k.get_process(pid)
+    local cur = cur_proc()
     repeat
         if proc.stopped and untraced then
             return "stopped", proc.status
         end
-
-        if not nohang then coroutine.yield(0) end
+    
+        if not nohang then cur.env.coroutine.yield(0) end
     until proc.is_dead or nohang
 
     local process = k.get_process(pid)
@@ -111,7 +122,6 @@ function k.syscalls.wait(pid, nohang, untraced)
     if k.cmdline.log_process_deaths then
         printk(k.L_DEBUG, "process died: %d, %s, %d", pid, reason, status or 0)
     end
-
     k.remove_process(pid)
 
     return reason, status
@@ -200,7 +210,8 @@ function k.syscalls.close(fd)
     return k.close(fd)
 end
 function k.syscalls.open(path, mode)
-    return k.open(path, mode)
+    local h, e = k.open(path, mode)
+    return h, e
 end
 function k.syscalls.makeDirectory(path)
     checkArg(1, path, "string")
@@ -212,7 +223,9 @@ function k.syscalls.spaceUsed(path)
 end
 function k.syscalls.exists(path)
     checkArg(1, path, "string")
-    return k.stat(path).mode & 0xF000 ~= 0
+    local stat = k.stat(path)
+    if not stat then return false end
+    return stat.mode & 0xF000 ~= 0
 end
 
 function k.syscalls.isReadOnly(path)
@@ -240,6 +253,9 @@ function k.syscalls.lastModified(path)
     checkArg(1, path, "string")
     return k.stat(path).mtime
 end
+
+k.syscalls.stat = k.stat
+
 function k.syscalls.getLabel(path)
     checkArg(1, path, "string")
     return k.du(path).label
@@ -263,6 +279,10 @@ local function cur_proc()
 end
 
 k.syscalls.proc = cur_proc
+
+function k.syscalls.pstat(pid)
+    return k.get_process(pid) or {}
+end
 
 function k.syscalls.execve(path, args, env)
     checkArg(1, path, "string")
@@ -299,9 +319,29 @@ function k.syscalls.execve(path, args, env)
     current.cmdline = args
 
     local thread = k.create_thread(function()
-        return exec(args)
+        local v = exec(args)
+        return v
     end)
-
     k.current_process():addThread(thread)
+    return true
+end
+
+function k.syscalls.mkdev(name, calls)
+    checkArg(1, name, "string")
+    checkArg(2, calls, "table", "nil")
+
+    if type(calls) == "nil" then
+        local stat = k.stat("/dev/" .. name)
+        if not k.process_has_permission(cur_proc(), stat, "x") then
+            return nil, k.errno.EPERM
+        end
+        k.devfs.unregister_device(name)
+        return true
+    end
+    local stat = k.stat("/dev")
+    if not k.process_has_permission(cur_proc(), stat, "x") then
+        return nil, k.errno.EPERM
+    end
+    k.devfs.register_device(name, calls)
     return true
 end

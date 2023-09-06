@@ -35,7 +35,10 @@ function k.load_executable(file, env)
     checkArg(2, env, "table", "nil")
     
     local current = k.current_process()
-    local content = k.readfile(file)
+    local content,e = k.readfile(file)
+    if not content then
+        error(string.format("readfile('%s') returned error %d", file, e))
+    end
     local func,err = load(content, "="..file, "t", env or current.env)
     if not func then
         k.printk(k.L_DEBUG, "Load of executable failed")
@@ -50,15 +53,23 @@ function k.load_executable(file, env)
     end
     local tbl = result[2]
    
-    return function(args)
+    local r = function(args)
         local result = table.pack(xpcall(tbl.main, debug.traceback, args))
         if not result[1] then
-            k.printk(k.L_NOTICE, "Lua error: %s", result[2])
+            local lines = split(result[2], "\n")
+            k.printk(k.L_NOTICE, "Lua error: %s", lines[1])
+            for i = 2,#lines do
+                k.printk(k.L_NOTICE, "| %s", lines[i])
+            end
+            if #lines > 1 then
+                k.printk(k.L_NOTICE, "========")
+            end
             k.syscalls.exit(1)
         else
             k.syscalls.exit(0)
         end
     end
+    return r
 end
 
 k.exec = function(file, args, wait)
@@ -76,10 +87,4 @@ k.exec = function(file, args, wait)
     end)
     -- process.cmdline = args
     process:addThread(thread)
-    if wait == true then
-        while not process.is_dead do
-            coroutine.yield()
-        end
-        return process.status
-    end
 end

@@ -1,3 +1,4 @@
+--#skip 13
 --[[
     Copyright (C) 2023 thegame4craft
 
@@ -15,28 +16,23 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]--
 
---#define KERNEL
---#define DEBUG_ENABLED
-local k = {}
-k.slowDown = 0.5
-k.boottime =  computer.uptime()
-k.hlt = function()
-    k.debug("Called hlt! Computer stopped execution")
-    while true do computer.pullSignal() end
-end
---#include "libstd.lua"
---#include "preload/main.lua"
---#include "errno.lua"
---#include "event.lua"
---#include "uuid.lua"
---#include "fd.lua"
---#include "drivers/main.lua"
---#include "lib/main.lua"
---#include "init/main.lua"
---#include "scheduler/main.lua"
---#include "package.lua"
---#include "syscalls.lua"
---#include "user/main.lua"
+local debugfd
+local bootfs = component.proxy(computer.getBootAddress())
 
-k.scheduler_loop()
-k.panic("Kernel Stopped!")
+function k.debug_init()
+--#ifdef DEBUG_ENABLED 
+    debugfd = bootfs.open("/debug.txt", "w")
+--#endif 
+end
+
+
+function k.debug(str)
+--#ifdef DEBUG_ENABLED 
+    bootfs.write(debugfd, str)
+--#endif 
+end
+
+--#ifdef DEBUG_ENABLED 
+k.debug_init()
+k.debug("Debug started!\n")
+--#endif 

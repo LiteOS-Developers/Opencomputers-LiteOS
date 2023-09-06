@@ -58,11 +58,15 @@ k.io.stdin = k.buffer.new("r", {
     read = function(self, count)
         local line = ""
         local x, y = k.cursor:getX(), k.cursor:getY()
+        if y + 1 >= k.cursor.height then
+            y = k.cursor.height - 1
+        end
         while true do
             local _, addr, char, code, ply = k.event.pull("key_down")
             local chr = utf8.char(char)
             if chr == "\r" then
                 k.setText(x, y, " ")
+                k.cursor:move(x, y)
                 k.printf("%s\n", line)
                 break
             elseif chr == "\b" then

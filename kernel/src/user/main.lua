@@ -1,6 +1,6 @@
 --#ifdef SYSCALLS
 k.register_syscall("ioctl", function(...)
-    k.ioctl(...)
+    return table.unpack({k.ioctl(...)})
 end)
 --#endif
 --#include "user/sandbox.lua"

@@ -46,7 +46,6 @@ do
 
     function provider:exists(path)
         checkArg(1, path, "string")
-        -- this is a couple lines of code compressed into one.
         return self.fs.exists(path)
     end
 
@@ -203,8 +202,8 @@ do
         if self.fs.isDirectory(path) then
             return nil, k.errno.EISDIR
         end
-        local fd = self.fs.open(path, mode)
-        if not fd then return nil, k.errno.ENOENT else return fd end
+        local fd, e = self.fs.open(path, mode)
+        if not fd then return nil, k.errno.ENOENT, e else return fd end
     end
 
     function provider:read(fd, count)
@@ -229,7 +228,6 @@ do
     function provider:flush() end
     function provider:close(fd)
         checkArg(1, fd, "table")
-    
         if fd.index then return true end
         return self.fs.close(fd)
     end

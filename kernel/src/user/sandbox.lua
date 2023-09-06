@@ -97,28 +97,31 @@ k.sandbox.new = function(opts)
         local proc = k.current_process()
         local last_yield = proc.last_yield or computer.uptime()
 
-        local info = debug.getinfo(3)
+        -- local info = debug.getinfo(3)
         -- k.printk(k.L_DEBUG, "%s:%.0f (%s)", info.short_src, info.currentline, info.name)
 
         if request == "syscall" then
             if computer.uptime() - last_yield > k.max_proc_time then
-                coroutine.yield(k.sysyield_string)
+                --coroutine.yield(k.sysyield_string)
                 proc.last_yield = computer.uptime()
             end
             
             return table.unpack(table.pack(k.perform_system_call(...)))
         end
+        
         proc.last_yield = computer.uptime()
+        if request == nil then
+            return yield(k.sysyield_string)
+        end
         return yield(request, ...)
     end
 
     function new.ioctl(fd, func, ...)
-        return table.unpack(table.pack(syscall("ioctl", fd, func, ...)))
+        return table.unpack(table.pack(new.syscall("ioctl", fd, func, ...)))
     end
 
     function new.syscall(call, ...)
-        local data = table.unpack(table.pack(new.coroutine.yield("syscall", call, ...)))
-        return data
+        return table.unpack(table.pack(new.coroutine.yield("syscall", call, ...)))
     end
     
     return new

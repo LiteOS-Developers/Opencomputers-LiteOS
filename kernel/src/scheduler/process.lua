@@ -157,7 +157,7 @@ function process:signal(sig, imm)
     if imm and (self.stopped or self.thread_count == 0) then
         coroutine.yield(0)
     end
-  end
+end
 
 function k.create_process(pid, parent, opts)
     parent = parent or default_parent

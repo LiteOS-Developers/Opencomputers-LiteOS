@@ -51,11 +51,14 @@ k.printf = function(fmt, ...)
         local lines = split(msg, "\n")
         for idx, l in pairs(lines) do
             l = l:gsub("\t", "  ")
-            gpu.set(k.cursor:getX(), k.cursor:getY(), l)
             -- lib.log_to_screen(dump(sh))
+            gpu.set(k.cursor:getX(), k.cursor:getY(), l)
             if k.cursor:getY() == k.cursor.height then
                 gpu.copy(1, 2, sw, sh - 1, 0, -1)
                 gpu.fill(1, sh, sw, 1, " ")
+            end
+            if #lines > idx then
+                k.cursor:incy(1)
             end
         end
         if msg:sub(-1, -1) ~= "\n" then
@@ -67,6 +70,7 @@ k.printf = function(fmt, ...)
             end
         end
     end
+    k.debug(msg)
 end
 
 k.getGPU = function() return gpu end

@@ -9,6 +9,11 @@ do
     local provider = {}
     provider.address = "devfs"
     local devices = {}
+    local handles = {}
+
+    local dev_api = {}
+
+    
 
     function k.devfs.register_device(path, device)
         checkArg(1, path, "string")
@@ -56,6 +61,8 @@ do
 
     k.devfs.lookup = path_to_node
 
+    
+
     k.devfs.register_device("/", {    
         list = function(_)
             local devs = {}
@@ -72,12 +79,52 @@ do
         end
     })
 
+    function provider:stat(...)
+        return { 
+            dev = -1, ino = -1, mode = "rw-r--r--", nlink = 1,
+            uid = 0, gid = 0, rdev = -1, size = 0, blksize = 2048,
+            atime = 0, ctime = 0, mtime = 0
+        }
+    end
+
     function provider:du()
         return {
             free = 1024,
             used = 0,
             label="devfs"
         }
+    end
+
+    function provider:ioctl(fd, call, ...)
+        checkArg(1, fd, "number", "table")
+        checkArg(2, call, "string")
+        local handle = handles[fd]
+        if not handle then return nil, k.errno.EBADF end
+        if handle.closed then
+            return nil, k.errno.EBADFD
+        end
+        local calls = devices[handle.device:sub(2)]
+        if not calls[call] then return nil, k.errno.ENOSYS end
+        return table.unpack(table.pack(calls[call](...)))
+    end
+
+    function provider:close(fd)
+        checkArg(1, fd, "number", "table")
+        local handle = handles[fd]
+        if not handle then return nil, k.errno.EBADF end
+        if handle.closed then return nil, k.errno.EBADFD end
+        handle.closed = true
+    end
+
+    function provider:open(path, mode)
+        checkArg(1, path, "string")
+        checkArg(2, mode, "string", "nil")
+        local fd
+        repeat
+            fd = math.random(0, 10000000)
+        until not handles[fd]
+        handles[fd] = {device = path}
+        return fd
     end
 
     function provider:exists(path)
@@ -97,10 +144,8 @@ do
             local result, err = device[calling](device, path, ...)
         
             if not result then return nil, err end
-        
-            if result and (calling == "open" or calling == "opendir") then
-                return { node = device, fd = result,
-                default_mode = result.default_mode }
+            if result and calling == "open" then
+                return { node = device, fd = result }
         
             else
                 return result, err
@@ -131,7 +176,6 @@ do
             return function(_, ...)
                 return autocall(k, ...)
             end
-    
         else
             return function(...)
                 return autocall(k, ...)

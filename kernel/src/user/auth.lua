@@ -20,7 +20,7 @@ k.printk(k.L_INFO, "user/auth")
 k.user = {}
 k.sessions = {}
 local sha3 = k.require("sha3")
--- k.hostname = k.readfile("/etc/hostname")
+k.hostname = k.readfile("/etc/hostname")
 
 function k.user.groups(username)
     local groups = k.readfile("/etc/group")
@@ -51,8 +51,8 @@ function k.user.match(username, password)
         local hashpw = data[2]
         user.uid = data[3]
         user.primGid = data[4]
-        user.home = data[6]
-        user.shell = data[7]
+        user.home = data[5]
+        user.shell = data[6]
         if password == hashpw and username == user.name then
             user.groups = k.user.groups(username)
             return true, user
@@ -71,7 +71,7 @@ function k.user.auth()
         if match then
             local sid
             repeat
-                sid = math.random(100, 64*1024)
+                sid = math.random(1, 64*1024)
             until not k.sessions[sid]
             k.sessions[sid] = user
             k.current_process().sid = sid
