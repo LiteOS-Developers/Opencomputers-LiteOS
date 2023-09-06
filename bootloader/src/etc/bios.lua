@@ -13,6 +13,9 @@ do
 
     -- backwards compatibility, may remove later
     local eeprom = component.list("eeprom")()
+    if computer.getArchitecture() ~= "Lua 5.3" then
+        computer.setArchitecture("Lua 5.3")
+    end
     computer.getBootAddress = function()
         return boot_invoke(eeprom, "getData")
     end
