@@ -12,7 +12,7 @@ else:
     assert False
 
 REPOS = [
-    "bootloader", "kernel", "coreutils", "corelib",
+    "bootloader", "kernel", "coreutils", "liblua",
     "generated", "kinit"
 ]
 
