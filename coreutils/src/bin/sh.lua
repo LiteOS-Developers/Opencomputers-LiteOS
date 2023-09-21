@@ -10,7 +10,8 @@ return {
                 parsed["command"] = args[i]
             elseif a == "--" then
                 parsed["args"] = {}
-                while i < #args do
+                i = i + 1
+                while i <= #args do
                     table.insert(parsed["args"], args[i])
                     i = i + 1
                 end

@@ -1,6 +1,5 @@
-printf("Preloaded\n")
 return {
     main = function(args)
-        printf("Executed\n") 
+        printf("Normal Hello World\n without Ansi \27[1;32;41mhello\n\27[1;36mWorld\n\27[m")
     end
 }

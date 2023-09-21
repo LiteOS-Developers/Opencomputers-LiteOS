@@ -31,12 +31,15 @@ end
 
 return {
     main = function(...)
+        local user = syscall("getSession")
+
         local device = {
-            dir = "",
+            dir = user.home,
             env = {
                 PATH = "/bin:/usr/bin"
             },
         }
+        
         device.chdir = function(dir)
             checkArg(1, dir, "string", "nil")
             if type(dir) == "nil" then return device.dir end
@@ -84,7 +87,6 @@ return {
         if not success then
             printf("getty: Cannot register device tty0: %d\n", errno or -1)
         end
-        local user = syscall("getSession")
         
         exec(user.shell:sub(1,-2))
 
