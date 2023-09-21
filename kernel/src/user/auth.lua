@@ -18,42 +18,53 @@
 
 k.printk(k.L_INFO, "user/auth")
 k.user = {}
-k.sessions = {}
-local sha3 = k.require("sha3")
-k.hostname = k.readfile("/etc/hostname")
-
-function k.user.groups(username)
+do
+    k.groups = {}
     local groups = k.readfile("/etc/group")
-    local ugroup = {}
     for _, line in ipairs(split(groups, "\n")) do
         local data = split(line, ":")
         local g = {}
         g.name = data[1]
         g.gid = data[2]
-        g.users = data[3]:gsub("\r", "")
-        local users = split(g.users, ",")
-        for _, user in ipairs(users) do
-            if user == username then
-                ugroup[#ugroup+1] = g
-                break
-            end
+        local users = data[3]:gsub("\r", "")
+        users = split(users, ",")
+        g.users = users
+        k.groups[g.gid] = deepcopy(g)
+    end
+end
+do
+    k.users = {}
+    local users = k.readfile("/etc/passwd")
+    for _, line in ipairs(split(users, "\n")) do
+        local user = {}
+        local data = split(line, ":")
+        user.name = data[1]
+        user.hashpw = data[2]
+        user.uid = data[3]
+        user.primGid = data[4]
+        user.home = data[5]
+        user.shell = data[6]
+        k.users[user.uid] = user
+    end
+end
+k.sessions = {}
+local sha3 = k.require("sha3")
+k.hostname = k.readfile("/etc/hostname")
+
+function k.user.groups(username)
+    local ugroup = {}
+    for _, g in pairs(k.groups) do
+        if table.contains(g.users, username) then
+            ugroup[#ugroup+1] = g
+            break
         end
     end
     return ugroup
 end
 
 function k.user.match(username, password)
-    local users = k.readfile("/etc/passwd")
-    local user = {}
-    for _, line in ipairs(split(users, "\n")) do
-        local data = split(line, ":")
-        user.name = data[1]
-        local hashpw = data[2]
-        user.uid = data[3]
-        user.primGid = data[4]
-        user.home = data[5]
-        user.shell = data[6]
-        if password == hashpw and username == user.name then
+    for uid, user in pairs(k.users) do
+        if password == user.hashpw and username == user.name then
             user.groups = k.user.groups(username)
             return true, user
         end

@@ -27,7 +27,8 @@ end
 
 
 local blacklist = {
-    k = true, lib = true, component = true, _G = true
+    k = true, lib = true, component = true, _G = true, e = true, computer = true, _VERSION = true,
+    rawset = true, rawget = true, rawlen = true, rawequal = true, debug = true, os = true
 }
 
 k.max_proc_time = tonumber(k.cmdline.max_proc_time or "3") or 3
@@ -40,8 +41,11 @@ k.sandbox.new = function(opts)
     local new = deepcopy(base or _G)
     for key, v in pairs(blacklist) do new[key] = nil end
     
+    new.umask = k.umask
+    new.umask_to_str = k.umask_to_str
+
     new.load = function(a, b, c, d)
-        return loadfile(a, b, c, d or k.current_process().env)
+        return load(a, b, c, d or k.current_process().env)
     end
     new.error = function(l)
         local info = debug.getinfo(3)
@@ -55,31 +59,42 @@ k.sandbox.new = function(opts)
         coroutine.yield()
     end
     new.printf = function(format, ...)
-        k.printf(format, ...)
+        local msg = string.format(format, ...)
+        local m, e = k.parse_ansi(msg)
+        if not m then error(e) end
+        for idx, parts in ipairs(m) do
+            for i, part in ipairs(parts) do
+                if #table.keys(part) ~= 0 then
+                    --k.printf("%s\n", dump(part))
+                    --[[]]
+                    if part.foreground and part.foreground <= 9 then
+                        gpu.setForeground(part.foreground, true)
+                    end
+                    if part.background and part.background <= 9 then
+                        gpu.setBackground(part.background, true)
+                    end
+                    if part.content then
+                        k.printf("%s", part.content)
+                    end
+                end
+            end            
+        end
+        -- k.printf(format, ...)
     end
 
     errno = deepcopy(k.errno)
 
-    -- new.time = k.time
+    new.dofile = function(path)
+        local res, e = k.loadfile(path, new)
+        if not res then
+            return nil, e
+        end
+        return res()
+    end
 
-    -- new.dofile = function(path)
-    --     local res, e = dofile(path, new)
-    --     if not res then
-    --         return nil, e
-    --     end
-    --     return res
-    -- end
-    -- new.package = new.dofile("/Lib/Package.lua")
-    -- new.require = function(p)
-    --     local groups = (user or {}).groups or {}
-    --     if p:sub(1,7):lower() == "system." and table.contains(groups, "0") then
-    --         return k.package.require(p:sub(8))
-    --     end
-    --     return new.package.require(p) 
-    -- end
-    -- end
-
-    
+    new.package = new.dofile("/lib/package.lua")
+    new.package.loaded["package"] = new.package
+    new.require = new.package.load
 
     new.computer = {
         uptime = computer.uptime,
@@ -90,9 +105,17 @@ k.sandbox.new = function(opts)
     new.io = {
         stdin = k.io.stdin
     }
+    local cyield = new.coroutine.yield
+    local yield = function(...) 
+        k.current_process().bg = gpu.setBackground(0, true)
+        k.current_process().fg = gpu.setForeground(7, true)
+        local v = {cyield(...)}
 
-    
-    local yield = new.coroutine.yield
+        gpu.setBackground(k.current_process().bg)
+        gpu.setForeground(k.current_process().fg)
+        return table.unpack(v)
+    end
+
     function new.coroutine.yield(request, ...)
         local proc = k.current_process()
         local last_yield = proc.last_yield or computer.uptime()
@@ -122,6 +145,19 @@ k.sandbox.new = function(opts)
 
     function new.syscall(call, ...)
         return table.unpack(table.pack(new.coroutine.yield("syscall", call, ...)))
+    end
+
+    new._G = new
+
+    local proc = k.current_process()
+    if proc and k.stat(proc.shell) ~= nil and not k.isDir(proc.shell) then
+        local handle = k.open(proc.shell, "r")
+        local r, e = load([[require("shell")]], "LoadShell", "bt", new)
+        if not r then
+            new.error("Failed to create Envoirement: " .. e)
+            return nil
+        end
+        new.package.loaded["shell"] = r()
     end
     
     return new

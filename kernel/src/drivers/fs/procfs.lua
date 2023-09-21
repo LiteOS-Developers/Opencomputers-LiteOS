@@ -2,6 +2,7 @@
 --#error UUID is not loaded
 --#endif
 --#define DRV_PROCFS
+
 k.printk(k.L_INFO, "drivers/fs/procfs")
 local provider = {
     address = "procfs",
@@ -42,6 +43,21 @@ provider.files.mounts = { data = function()
 
     return table.concat(result, "\n") .. "\n"
 end }
+
+provider.files["/"] = {
+    stat = function()
+        return { 
+            dev = -1, ino = -1, mode = 16877, nlink = 1,
+            uid = 0, gid = 0, rdev = -1, size = 0, blksize = 2048,
+            atime = 0, ctime = 0, mtime = 0
+        }
+    end,
+    list = function()
+        local files = provider.files
+        files["/"] = nil
+        return table.keys(files)
+    end
+}
 
 --#include "drivers/fs/procfs_event.lua"
 
@@ -114,6 +130,29 @@ function provider:du()
         label="procfs"
     }
 end
+
+function provider:list(path)
+    if provider.files[path] and provider.files[path].list then return provider.files[path].list() end
+    return { 
+        
+    }
+end
+
+function provider:exists(path)
+    if provider.files[path] then return true end
+    return false
+end
+
+
+function provider:stat(path, ...)
+    if provider.files[path] and provider.files[path].stat then return provider.files[path].stat() end
+    return { 
+        dev = -1, ino = -1, mode = 33234, nlink = 1,
+        uid = 0, gid = 0, rdev = -1, size = 0, blksize = 2048,
+        atime = 0, ctime = 0, mtime = 0
+    }
+end
+
 
 function provider:open(path)
     checkArg(1, path, "string")

@@ -153,6 +153,10 @@ function k.mount(device, path)
     return true
 end
 
+function k.isMount(path)
+    return not not mounts[path]
+end
+
 function k.umount(path)
     checkArg(1, path, "string")
     path = k.clean_path(path)
@@ -180,7 +184,7 @@ function k.open(file, mode)
     local segs = k.split_path(remain)
     local dir = "/" .. table.concat(segs, "/", 1, #segs - 1)
     local base = segs[#segs]
-    modes = {}
+    local modes = {}
     for i=1,#mode,1 do
         modes[mode:sub(i,i)] = true
     end
@@ -271,8 +275,11 @@ function k.list(path)
     for dir, _ in pairs(mounts) do
         local segments = k.split_path(dir)
         local parent = "/" .. table.concat(segments, "/", 1, #segments - 1)
-        if parent == path then files[#files+1] = segments[#segments] end
-        -- k.printf("%s %s %s\n", parent, path, segments[#segments])
+        if parent == path then
+            if segments[#segments] ~= nil then
+                files[#files + 1] = segments[#segments] .. "/"
+            end
+        end
     end
     -- k.printf("%s\n", dump(table.keys(mounts)))
     return files
@@ -360,6 +367,7 @@ end
 
 function k.isDir(path)
     checkArg(1, path, "string")
+    if k.isMount(path) then return true end
     local stat = k.stat(path)
     if not stat then return false, k.errno.ENOENT end
     return stat.mode & k.perm.FS_DIR ~= 0

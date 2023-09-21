@@ -71,7 +71,7 @@ local default = {n = 0}
 
 
 function k.scheduler_loop()
-    last_yield = 0
+    local last_yield = 0
     local last_time = os.time()
     while processes[1] do
         k.pullSignal(0.05)

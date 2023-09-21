@@ -36,3 +36,19 @@ k.umask = function(v)
     result = result | (others:sub(3) == "x" and 1 or 0) 
     return result
 end
+
+k.umask_to_str = function(v)
+    local result = (v & k.perm.FS_DIR ~= 0 and "d" or "f") -- TODO: needs improvement for socket and more
+    result = result .. (v & 256 ~= 0 and "r" or '-') 
+    result = result .. (v & 128 ~= 0 and "w" or "-") 
+    result = result .. (v & 64 ~= 0  and "x" or "-") 
+
+    result = result .. (v & 32 ~= 0 and "r" or '-') 
+    result = result .. (v & 16 ~= 0 and "w" or "-") 
+    result = result .. (v & 8 ~= 0  and "x" or "-") 
+
+    result = result .. (v & 4 ~= 0 and "r" or '-') 
+    result = result .. (v & 2 ~= 0 and "w" or "-") 
+    result = result .. (v & 1 ~= 0 and "x" or "-") 
+    return result
+end

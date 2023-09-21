@@ -189,7 +189,9 @@ function k.create_process(pid, parent, opts)
 
         cwd = parent.cwd or "/",
         root = parent.root or "/",
+        shell = parent.shell or "/dev/tty0",
 
+        colors = {fg = 0, bg = 0},
         fds = {},
         handlers = {},
         signal_handlers = {},

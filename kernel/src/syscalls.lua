@@ -44,6 +44,16 @@ function k.register_syscall(call, f)
     k.syscalls[call] = f
 end
 
+function k.syscalls.group(gid)
+    checkArg(1, gid, "string")
+    return k.groups[gid]
+end
+
+function k.syscalls.user(uid)
+    checkArg(1, uid, "string")
+    return k.users[uid]
+end
+
 function k.syscalls.geteuid()
     local cur = k.current_process()
     return cur and cur.euid or 0
@@ -238,7 +248,9 @@ function k.syscalls.spaceTotal(path)
 end
 function k.syscalls.isDirectory(path)
     checkArg(1, path, "string")
-    return k.stat(path).mode & k.perm.FS_DIR ~= 0
+    local stat = k.stat(path)
+    if not stat then return false end
+    return stat.mode & k.perm.FS_DIR ~= 0
 end
 function k.syscalls.rename(from, to)
     checkArg(1, from, "string")

@@ -13,8 +13,6 @@ do
 
     local dev_api = {}
 
-    
-
     function k.devfs.register_device(path, device)
         checkArg(1, path, "string")
         checkArg(2, device, "table")
@@ -61,8 +59,6 @@ do
 
     k.devfs.lookup = path_to_node
 
-    
-
     k.devfs.register_device("/", {    
         list = function(_)
             local devs = {}
@@ -72,16 +68,18 @@ do
     
         stat = function()
             return { 
-                dev = -1, ino = -1, mode = "rw-r--r--", nlink = 1,
+                dev = -1, ino = -1, mode = 16877, nlink = 1,
                 uid = 0, gid = 0, rdev = -1, size = 0, blksize = 2048,
                 atime = 0, ctime = 0, mtime = 0
             }
         end
     })
 
-    function provider:stat(...)
+    function provider:stat(path, ...)
+        k.debug(string.format("devfs#stat %s %s\n", path, dump(devices[path])))
+        if devices[path] ~= nil and devices[path].stat then return devices[path].stat() end
         return { 
-            dev = -1, ino = -1, mode = "rw-r--r--", nlink = 1,
+            dev = -1, ino = -1, mode = 33234, nlink = 1,
             uid = 0, gid = 0, rdev = -1, size = 0, blksize = 2048,
             atime = 0, ctime = 0, mtime = 0
         }
