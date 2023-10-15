@@ -179,7 +179,9 @@ function k.open(file, mode)
     checkArg(2, mode, "string")
     
     local node, remain = path_to_node(file)
-    if not node.open then return nil, k.errno.ENOSYS end
+    if not node.open then
+        return nil, k.errno.ENOSYS
+    end
     local exists = node:exists(remain)
     local segs = k.split_path(remain)
     local dir = "/" .. table.concat(segs, "/", 1, #segs - 1)
@@ -191,6 +193,7 @@ function k.open(file, mode)
     
     local stat, err
     if not exists and (not modes.w and not modes.a) then
+        k.printf("enoent %s\n", file)
         return nil, k.errno.ENOENT
     elseif not exists and table.contains({"w", "a"}, mode) then
         stat, err = node:stat(dir)
@@ -206,6 +209,7 @@ function k.open(file, mode)
     end
     
     local fd, err, sys_e = node:open(remain, mode)
+    
     if not fd then
         k.printk(k.L_NOTICE, "rootfs:206 %s %s %s", tostring(exists), remain, sys_e or "<SYS_e>")
         return nil, err or -2

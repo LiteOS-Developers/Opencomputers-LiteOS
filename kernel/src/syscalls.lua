@@ -220,7 +220,9 @@ function k.syscalls.close(fd)
     return k.close(fd)
 end
 function k.syscalls.open(path, mode)
-    local h, e = k.open(path, mode)
+    checkArg(1, path, "string")
+    checkArg(2, mode, "string", "nil")
+    local h, e = k.open(path, mode or "r")
     return h, e
 end
 function k.syscalls.makeDirectory(path)
@@ -337,7 +339,7 @@ function k.syscalls.execve(path, args, env)
     k.current_process():addThread(thread)
     return true
 end
-
+--#ifdef ENABLE_SYSCALL_MKDEV
 function k.syscalls.mkdev(name, calls)
     checkArg(1, name, "string")
     checkArg(2, calls, "table", "nil")
@@ -354,6 +356,29 @@ function k.syscalls.mkdev(name, calls)
     if not k.process_has_permission(cur_proc(), stat, "x") then
         return nil, k.errno.EPERM
     end
+    k.debug(string.format("%s %s\n", name, dump(calls)))
     k.devfs.register_device(name, calls)
+    return true
+end
+--#endif
+function k.syscalls.mknod(path, type_, addr)
+    checkArg(1, path, "string")
+    checkArg(2, type_, "string")
+    checkArg(3, addr, "string", "nil")
+
+    local stat = k.stat(path)
+    if stat then return nil, k.errno.EEXIST end
+    if path:sub(1, ("/dev/"):len()) ~= "/dev/" then return nil, k.errno.EINVAL end
+
+    local stat = k.stat("/dev")
+    if not k.process_has_permission(cur_proc(), stat, "w") then
+        return nil, k.errno.EPERM
+    end
+
+    if not k.devfs.types[type_] then
+        k.printk(k.L_EMERG, "Cannot register device '%s' with type '%s': TypeNotRegistered", path, type_)
+        return nil, k.errno.ENOTSUP
+    end
+    k.devfs.register_device(path:sub(5), k.devfs.types[type_](addr))
     return true
 end

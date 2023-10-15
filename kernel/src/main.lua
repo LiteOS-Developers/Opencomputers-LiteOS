@@ -16,7 +16,7 @@
 ]]--
 
 --#define KERNEL
---#define DEBUG_ENABLED
+
 local k = {}
 k.slowDown = 0.5
 k.boottime =  computer.uptime()
