@@ -6,10 +6,8 @@ import subprocess
 def error(msg):
     subprocess.call(["printf", "[  \033[1;91mERR\033[0;39m ] " + msg + "\n"])
 
-
-
 class PreProcessor:
-    def __init__(self, infile, outfile) -> None:
+    def __init__(self, infile, outfile, defines:dict[str, True]=None) -> None:
         if isinstance(infile, str):
             if not os.path.isfile(infile):
                 raise FileNotFoundError(infile)
@@ -19,9 +17,14 @@ class PreProcessor:
         if isinstance(outfile, str):
             outfile = open(outfile, "w")
 
+        defines = defines or {}
+        if not isinstance(defines, dict):
+            error("`defines` is not an dict. using default (%s) %s" %( infile, defines))
+            defines = None
+
         self.infile = infile
         self.outfile = outfile
-        self.defines = {}
+        self.defines = defines or {}
     
     def process(self):
         skip = False
@@ -61,6 +64,7 @@ class PreProcessor:
                 p.outfile = buf
                 p.defines = self.defines
                 p.process()
+                self.defines = p.defines
                 print(buf.getvalue(), file=self.outfile)
             elif result := re.match(r"--#nl", line.strip()) and not skip:
                 print("", file=self.outfile)
@@ -78,13 +82,22 @@ if __name__ == "__main__":
     if len(args) >= 2:
         infile = args[0]
         outfile = args[1]
+        predefs = None
+        if len(args) >= 4 and args[2] == "-c" and os.path.isfile(args[3]):
+            inbuf = io.StringIO()
+            inbuf.write("--#include \"%s\"" % os.path.abspath(args[3]))
+            inbuf.seek(0)
+            outbuf = io.StringIO()
+            defs = PreProcessor(inbuf, outbuf)
+            defs.process()
+            predefs = defs.defines
 
     cwd = os.getcwd()
 
     base = os.path.dirname(os.path.abspath(infile))
     
     os.chdir(base)
-    p = PreProcessor(infile, outfile)
+    p = PreProcessor(infile, outfile, predefs)
     p.process()
     p.outfile.close()
     os.chdir(cwd)

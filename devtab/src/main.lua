@@ -15,28 +15,11 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ]]--
 
---#define KERNEL
+local tab = {}
+--#include "readtab.lua"
 
-local k = {}
-k.slowDown = 0.5
-k.boottime =  computer.uptime()
-k.hlt = function()
-    k.debug("Called hlt! Computer stopped execution")
-    while true do computer.pullSignal() end
-end
---#include "libstd.lua"
---#include "preload/main.lua"
---#include "errno.lua"
---#include "event.lua"
---#include "uuid.lua"
---#include "fd.lua"
---#include "drivers/main.lua"
---#include "lib/main.lua"
---#include "init/main.lua"
---#include "scheduler/main.lua"
---#include "package.lua"
---#include "syscalls.lua"
---#include "user/main.lua"
-
-k.scheduler_loop()
-k.panic("Kernel Stopped!")
+return {
+    main = function(...)
+        tab.loadtab()
+    end
+}

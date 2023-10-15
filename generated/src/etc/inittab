@@ -1,2 +1,3 @@
 fstab:123:boot:/sbin/fstab.lua
 shell:123:respawn:/sbin/getty.lua
+devtab:123:boot:/sbin/devtab.lua

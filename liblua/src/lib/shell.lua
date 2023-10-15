@@ -8,7 +8,12 @@ if #table.keys(proc) == 0 or proc.shell == nil then
     return {}
 end
 
-local handle = syscall("open", proc.shell, "r")
+local handle, e = syscall("open", proc.shell, "r")
+if not handle then
+    printf("Cannot open shell %s: %d\n", proc.shell, e or -1)
+    syscall("exit", -1)
+end
+
 
 return {
     chdir = function(dir)

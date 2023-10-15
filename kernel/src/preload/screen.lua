@@ -59,7 +59,6 @@ k.printf = function(fmt, ...)
     if gpu then
         local sw, sh = k.cursor.width, k.cursor.height
         local lines = split(msg, "\n")
-        k.debug(string.format("%d\n", #lines))
         for idx, l in pairs(lines) do
             l = l:gsub("\t", "  ")
             -- lib.log_to_screen(dump(sh))

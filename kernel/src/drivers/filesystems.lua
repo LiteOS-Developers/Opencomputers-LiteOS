@@ -48,7 +48,6 @@ k.perm = {
 }
 
 
-
 function k.register_fstype(name, recognizer)
     checkArg(1, name, "string")
     checkArg(2, recognizer, "function")
