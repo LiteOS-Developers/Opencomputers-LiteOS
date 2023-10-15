@@ -30,7 +30,7 @@ return {
             syscall("wait", pid)
         else
             printf("No command specified: \n%s\n", dump(parsed))
-            printf("%s\n", dump(args))
+            -- printf("%s\n", dump(args))
         end
     end
 }
