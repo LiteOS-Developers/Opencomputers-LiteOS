@@ -20,6 +20,10 @@ local tab = {}
 
 return {
     main = function(...)
-        tab.loadtab()
+        success, errno = tab.loadtab()
+        if not success then
+            printf("devtab failed with code %d\n", errno)
+            syscall("exit", -1)
+        end
     end
 }

@@ -132,12 +132,7 @@ function gpuprovider:bitblt(dst, col, row, w, h, src, fromCol, fromRow)
 end
 
 
-k.devfs.register_device_type(5, 0, "c", function(addr)
-    local comps = component.list("gpu")
-    for a, t in comps do
-        if a:sub(1, addr:len()) == addr then
-            return setmetatable({comp = component.proxy(a), addr = a}, mt)
-        end
-    end
-    k.printk(k.L_ERROR, "Device c5.0 with addr ('%s') is not found", addr)
+k.devfs.register_device_type(5, 0, "c", function()
+    local gpu = component.list("gpu")()
+    return setmetatable({comp = gpu}, mt)
 end)

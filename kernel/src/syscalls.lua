@@ -361,7 +361,7 @@ function k.syscalls.mkdev(name, calls)
     return true
 end
 --#endif
-function k.syscalls.mknod(path, type_, addr)
+function k.syscalls.mknod(path, type_)
     checkArg(1, path, "string")
     checkArg(2, type_, "string")
     checkArg(3, addr, "string", "nil")
@@ -379,6 +379,7 @@ function k.syscalls.mknod(path, type_, addr)
         k.printk(k.L_EMERG, "Cannot register device '%s' with type '%s': TypeNotRegistered", path, type_)
         return nil, k.errno.ENOTSUP
     end
-    k.devfs.register_device(path:sub(5), k.devfs.types[type_](addr))
+    k.devfs.register_device(path:sub(5), k.devfs.types[type_]())
     return true
 end
+

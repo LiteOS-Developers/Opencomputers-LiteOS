@@ -33,12 +33,12 @@ function tab.loadtab()
     for k, line in ipairs(lines) do
         if line:sub(-1) == "\r" then line = line:sub(1, line:len() - 1) end
         all = split(line, ",")
-        if #all ~= 3 then return errno.EINVAL end
-        name, type_, addr = table.unpack(all)
-        if type(name) ~= "string" or type(type_) ~= "string" or type(addr) ~= "string" then
+        if #all ~= 2 then return errno.EINVAL end
+        name, type_ = table.unpack(all)
+        if type(name) ~= "string" or type(type_) ~= "string" then
             return nil, errno.EINVAL
         end
-        local result, e = syscall("mknod", "/dev/"..name, type_, addr)
+        local result, e = syscall("mknod", "/dev/"..name, type_)
     end
     return true
 end
