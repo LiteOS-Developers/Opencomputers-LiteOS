@@ -7,28 +7,28 @@ import threading as th
 
 if os.name == "posix":
     py = "python3"
-elif os.name == "nt":
-    py = "python"
 else:
     assert False
 
 base = os.path.abspath(__file__)
 base = os.path.sep.join(os.path.dirname(base).split(os.path.sep)[:-1])
 
+pkgdir = os.path.join(base, "packages")
+
 REPOS = [
     "bootloader", "kernel", "coreutils", "liblua",
     "generated", "kinit", "devtab"
 ]
-env = lambda repo : [f'TARGET="{base}/{repo}/build"', f'BASE="{base}"', f'SRC="{base}/{repo}"']
+env = lambda repo : [f'TARGET="{pkgdir}/{repo}/build"', f'BASE="{base}"', f'SRC="{pkgdir}/{repo}"', f'PACKAGEDIR="{pkgdir}"']
 
 def build(repo, base):
-    subprocess.call(["rm", "-rf", f"{base}/{repo}/build"])
+    subprocess.call(["rm", "-rf", f"{pkgdir}/{repo}/build"])
     print(f"[CLEAN] {repo}")
-    if 'Makefile' in os.listdir(repo):
+    if 'Makefile' in os.listdir(os.path.join(pkgdir, repo)):
         print(f"[BUILD] {repo}")
-        subprocess.run(["make", "--no-print-directory", "-C", repo, "build", *env(repo)])
+        subprocess.run(["make", "--no-print-directory", "-C", f"packages{os.path.sep}{repo}", "build", *env(repo)])
         print(f"[INSTALL] {repo}")
-        subprocess.run(["cp", "-a", f"{base}/{repo}/build/.", f"{base}/build"])
+        subprocess.run(["cp", "-a", f"{pkgdir}/{repo}/build/.", f"{base}/build"])
     else:
         raise Exception("No build file for repo '%s'" % repo)
 

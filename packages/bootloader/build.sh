@@ -1,4 +1,6 @@
 #! /bin/bash
+exit
+
 mkdir -p $TARGET/boot
 mkdir -p $TARGET/etc
 cp $SRC/src/boot/boot.lua $TARGET/boot/boot.lua

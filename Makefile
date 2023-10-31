@@ -1,7 +1,8 @@
 BASEDIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 BUILDDIR:=$(BASEDIR)/build
+PACKAGEDIR:=$(BASEDIR)/packages
 REPOS:=bootloader coreutils generated kernel kinit liblua
-EXECVARS:=TARGET="$(BASEDIR)/$$f/build" BASE="$(BASEDIR)" SRC="$(BASEDIR)/$$f"
+EXECVARS:=TARGET="$(PACKAGEDIR)/$$f/build" BASE="$(BASEDIR)" SRC="$(PACKAGEDIR)/$$f" PACKAGEDIR="$(PACKAGEDIR)"
 
 all: clean setup build-all install
 
@@ -17,20 +18,20 @@ clean:
 	@rm -rf $(BUILDDIR)
 	@for f in $(REPOS) ; do \
 		echo "[CLEAN] $$f" ; \
-		rm -rf "$(BASEDIR)/$$f/build" ; \
+		rm -rf "$(PACKAGEDIR)/$$f/build" ; \
 	done
 
 install:
 	@for f in $(REPOS) ; do \
 		echo "[INSTALL] $$f" ; \
-		cp -a "$(BASEDIR)/$$f/build/." $(BUILDDIR) ; \
+		cp -a "$(PACKAGEDIR)/$$f/build/." $(BUILDDIR) ; \
 	done
 
 build-all:
 	@for f in $(REPOS) ; do \
-		if test -f "$(BASEDIR)/$$f/Makefile" ; then \
+		if test -f "$(PACKAGEDIR)/$$f/Makefile" ; then \
 			echo "[BUILD] $$f" ; \
-			make --no-print-directory -C "$(BASEDIR)/$$f" build $(EXECVARS) ; \
+			make --no-print-directory -C "$(PACKAGEDIR)/$$f" build $(EXECVARS) ; \
 		else \
 			echo "[ERR] $$f does not have a makefile" ; \
 			exit 1 ; \

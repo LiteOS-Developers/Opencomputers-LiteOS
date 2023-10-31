@@ -1,6 +1,5 @@
 .archive
 .vscode
 build
-releases
 .idea
 __pycache__
