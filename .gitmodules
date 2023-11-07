@@ -1,0 +1,3 @@
+[submodule "kernel"]
+	path = package/kernel
+	url = https://github.com/oc-liteos/kernel.git
