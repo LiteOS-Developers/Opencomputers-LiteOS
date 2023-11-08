@@ -5,3 +5,6 @@
 	path = packages/liblua
 	url = https://github.com/LiteOS-Developers/liblua.git
 	
+[submodule "packages/kinit"]
+	path = packages/kinit
+	url = https://github.com/LiteOS-Developers/kinit
