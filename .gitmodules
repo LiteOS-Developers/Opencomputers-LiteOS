@@ -1,6 +1,7 @@
 [submodule "packages/kernel"]
 	path = packages/kernel
-	url = https://github.com/oc-liteos/kernel.git
+	url = https://github.com/LiteOS-Developers/kernel.git
 [submodule "packages/liblua"]
 	path = packages/liblua
 	url = https://github.com/LiteOS-Developers/liblua.git
+	
