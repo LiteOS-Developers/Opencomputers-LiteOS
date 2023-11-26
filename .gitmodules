@@ -4,7 +4,9 @@
 [submodule "packages/liblua"]
 	path = packages/liblua
 	url = https://github.com/LiteOS-Developers/liblua.git
-	
 [submodule "packages/kinit"]
 	path = packages/kinit
 	url = https://github.com/LiteOS-Developers/kinit
+[submodule "packages/devtab"]
+	path = packages/devtab
+	url = https://github.com/LiteOS-Developers/devtab
