@@ -1,7 +1,7 @@
 BASEDIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 BUILDDIR:=$(BASEDIR)/build
 PACKAGEDIR:=$(BASEDIR)/packages
-REPOS:=bootloader coreutils generated kernel kinit liblua
+REPOS:=bootloader coreutils generated kernel kinit liblua devtab
 EXECVARS:=TARGET="$(PACKAGEDIR)/$$f/build" BASE="$(BASEDIR)" SRC="$(PACKAGEDIR)/$$f" PACKAGEDIR="$(PACKAGEDIR)"
 
 all: clean setup build-all install
