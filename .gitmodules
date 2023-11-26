@@ -13,3 +13,6 @@
 [submodule "packages/bootloader"]
 	path = packages/bootloader
 	url = https://github.com/LiteOS-Developers/bootloader
+[submodule "packages/coreutils"]
+	path = packages/coreutils
+	url = https://github.com/LiteOS-Developers/coreutils.git
