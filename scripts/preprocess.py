@@ -31,13 +31,13 @@ class PreProcessor:
         skip_n = 0
         for line in self.infile.readlines():
             if line.endswith("\n"): line = line[:-1]
-            if len(line) == 0: continue
+            
             if skip_n > 0:
                 skip_n -= 1
                 continue
 
-            if (result := re.match("--#define([\s]+)([A-Za-z][\w\d]+)", line.strip())) and not skip:
-                self.defines[result.groups()[1]] = True
+            if (result := re.match(r"--#define([\s]+)([A-Za-z0-9_][\w\d]+)([\s]+)?([^*]+)?", line.strip())) and not skip:
+                self.defines[result.groups()[1]] = result.groups()[3] or True
                 continue
             elif (result := re.match(r"--#undef([\s]+)([A-Za-z][\w\d]+)", line.strip())) and not skip:
                 self.defines[result.groups()[1]] = False
@@ -66,12 +66,15 @@ class PreProcessor:
                 p.process()
                 self.defines = p.defines
                 print(buf.getvalue(), file=self.outfile)
-            elif result := re.match(r"--#nl", line.strip()) and not skip:
-                print("", file=self.outfile)
+            #elif result := re.match(r"--#nl", line.strip()) and not skip:
+            #    print("", file=self.outfile)
             elif (result := re.match(r"--#skip([\s]+)([\d]+)", line.strip())) and not skip:
                 skip_n = int(result.groups()[1])
             elif result := re.match(r"--#endif", line.strip()):
                 skip = False
+            elif (result := re.match(r"--#ifeq([\s]+)([A-Za-z][\w\d]*)([\s]+)([A-Za-z][\w\d]*)", line.strip())) and not skip:
+                groups = result.groups()
+                skip = self.defines[groups[1]] != self.defines[groups[3]]
             elif not skip:
                 print(line, file=self.outfile)
 
