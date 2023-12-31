@@ -3,6 +3,7 @@ BUILDDIR:=$(BASEDIR)/build
 PACKAGEDIR:=$(BASEDIR)/packages
 REPOS:=bootloader coreutils generated kernel kinit liblua devtab
 EXECVARS:=TARGET="$(PACKAGEDIR)/$$f/build" BASE="$(BASEDIR)" SRC="$(PACKAGEDIR)/$$f" PACKAGEDIR="$(PACKAGEDIR)"
+VERSION ?= v0.1.0-dev-2
 
 all: clean setup build-all install
 
@@ -37,3 +38,8 @@ build-all:
 			exit 1 ; \
 		fi ; \
 	done
+
+release: all
+	@mkdir -p releases
+	@cd build; zip -9 -r ../releases/release-$(VERSION).zip *
+
