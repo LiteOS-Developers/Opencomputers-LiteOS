@@ -1,4 +1,9 @@
 .archive
 .vscode
 build
+.idea
+__pycache__
+support/buildtools
+tmp
+vm
 releases

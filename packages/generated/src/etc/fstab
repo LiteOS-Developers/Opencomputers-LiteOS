@@ -1,0 +1,3 @@
+devfs /dev
+tempfs /tmp
+procfs /proc

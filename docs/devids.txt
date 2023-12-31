@@ -1,0 +1,76 @@
+1 char CPU
+    0 CPU
+    1 APU
+
+2 char Memory IO
+    0 /dev/null
+    1 /dev/zero
+    
+3 block
+    0 /dev/root = interface for root fs
+    1 /dev/fs0 = Primary filesystem (boot fs)
+    2 /dev/fs1 = second filesystem
+    ...
+    8 /dev/fs7 eighth filesystem
+
+4 block
+    0 /dev/net0 = First network card
+
+4 char
+    0 /dev/ip/0 = primary network ip
+    1 /dev/ip/1
+    ...
+    3 /dev/ip/3
+
+5 char
+    0 /dev/gpu = GPU
+
+6 char IO
+    0 /dev/screen0 
+    1 /dev/screen1
+    2 /dev/screen2
+    3 /dev/kb = Keyboard
+    5 /dev/inet = internet card
+    6 /dev/red = redstone card
+
+7 char Energy
+    0 /dev/pctl = Power control
+
+8 block
+    0 /dev/fpa Floppy disk
+    1 /dev/fpb last floppy disk
+    3 /dev/sda first drive
+    ...
+    8 /dev/sde 5th drive
+
+8 char
+    0 /dev/tty0
+    ...
+    15 /dev/tty15
+
+9 block
+    0 /dev/sda0 First drive Partition
+    ...
+    32 /dev/sdb0 second drive Partition
+    ..
+    64 /dev/sdc0 thrid drive Partition
+    ...
+    96 /dev/sdd0
+    ...
+    128 /dev/sde0
+    ...
+    160 /dev/sdf0
+    ...
+    191 /dev/sdf30
+
+11 char
+    0 /dev/efi
+
+11 block
+    0 /dev/firmware
+
+12 char 3d 
+    0 /dev/holo
+    1 /dev/printer
+
+
