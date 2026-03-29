@@ -12,6 +12,7 @@ else:
 
 base = os.path.abspath(__file__)
 base = os.path.sep.join(os.path.dirname(base).split(os.path.sep)[:-1])
+print(base)
 
 pkgdir = os.path.join(base, "packages")
 

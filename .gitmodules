@@ -1,3 +1,0 @@
-[submodule "packages/kernel"]
-	path = packages/kernel
-	url = https://github.com/LiteOS-Developers/kernel.git
