@@ -1,0 +1,6 @@
+--#include "./cursor.lua"
+--#include "./screen.lua"
+--#include "./cmdline.lua"
+--#include "./debug.lua"
+--#include "./printk.lua"
+--#include "./romfs.lua"
