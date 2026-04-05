@@ -5,11 +5,12 @@ CXX := g++
 SRC_DIR := src
 OBJ_DIR := obj
 BIN_DIR := bin
+INSTALL_DIR := ../bin
 
 TARGET := $(BIN_DIR)/toolchain
 
 # Flags
-CXXFLAGS := -std=c++17 -Wall -Wextra -MMD -MP -O2
+CXXFLAGS := -std=c++17 -Wall -Wextra -MMD -MP -Os -O2
 LDFLAGS :=
 
 SRCS := $(shell find $(SRC_DIR) -name '*.cpp')
@@ -38,6 +39,10 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
 
-rebuild: clean all
+install: $(TARGET)
+	@mkdir -p $(INSTALL_DIR)
+	strip $(TARGET)
+	cp $(TARGET) $(INSTALL_DIR)
+
 
 .PHONY: all clean rebuild run
