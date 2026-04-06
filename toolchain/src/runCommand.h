@@ -10,6 +10,6 @@
 #include "command.h"
 
 successfull_t runCommand(std::string line, table& globals, table& locals);
-
+bool runFile(std::string file);
 
 #endif

@@ -10,8 +10,7 @@ std::vector<argtype> make_arguments(std::string opts) {
 
     if(opts.at(start) == '"') {
       size_t pos = opts.find('"', start+1);
-      if(pos == std::string::npos) pos = length;      
-    
+      if(pos == std::string::npos) pos = length;          
       arg = opts.substr(start + 1, pos-start);
       
       if(arg.back() == '"') {
@@ -27,7 +26,7 @@ std::vector<argtype> make_arguments(std::string opts) {
       }
       std::string subcmd = opts.substr(start+2, pos - (start + 2));
       start = pos + 1;
-      if(opts.at(start) == ' ')
+      if(start < length && opts.at(start) == ' ')
         start++;
 
       args.push_back({
@@ -41,6 +40,8 @@ std::vector<argtype> make_arguments(std::string opts) {
       arg = opts.substr(start, pos-start);
       start += arg.length() + 1;
     }
+    arg = trim(arg);
+    if(arg.length() == 0) continue;
     args.push_back({
       .type = ARGTYPE_VALUE,
       .value = arg
@@ -107,6 +108,65 @@ successfull_t execute(std::string command, std::string opts, table& globals, tab
     }
     out << text;
     return {.status = STATE_SUCCESS, .output = "",};
+  } else if(command == "echo") {
+    std::string result = "";
+    unsigned long int size = args.size();
+    for(unsigned long int i = 0; i < size; i++) {
+      result += args.at(i) + " ";
+    }
+    return {.status = STATE_SUCCESS, .output = result};
+  } else if(command == "list") {
+    if(args.size() < 1) {
+      printf("list: Invalid Usage. Usage: list <path> <recursive:true/false> <type:file/dir>\n");
+      return {.status = STATE_ERROR, .output = ""};
+    }
+    std::filesystem::path path = std::filesystem::path(args.at(0));
+    if(!std::filesystem::exists(path)) {
+      printf("list: Path does not exists\n");
+      return {.status = STATE_ERROR, .output = ""};
+    }
+
+    std::string type = "file";
+    bool recursive = false;
+
+    if(args.size() >= 2) {
+      recursive = args.at(1) == "true";
+    }
+    if(args.size() >= 3) {
+      type = args.at(2);
+    }
+    std::string result = "";
+    if(recursive) { 
+      for(auto const& entry : std::filesystem::recursive_directory_iterator(path)) {
+        if((entry.is_directory() && type == "dir") || (entry.is_regular_file() && type == "file")) {
+          result += entry.path().string() + " ";
+        }
+      } 
+    } else {
+       for(auto const& entry : std::filesystem::directory_iterator(path)) {
+        if((entry.is_directory() && type == "dir") || (entry.is_regular_file() && type == "file")) {
+          result += entry.path().string() + " ";
+        }
+      }
+    }
+
+    return {.status = STATE_SUCCESS, .output = result};
+  } else if (command == "child") {
+    if (args.size() < 1) {
+      printf("child: missing Argument <path>\n");
+      return {.status = STATE_ERROR, .output = ""};
+    }
+    std::filesystem::path path = std::filesystem::path(args.at(0));
+    if(std::filesystem::exists(path) && std::filesystem::is_regular_file(path)) {
+      if(runFile(path.string())) {
+        return {.status = STATE_SUCCESS, .output = ""};
+      }
+      printf("child: Error in Children. See above for more error\n");
+      return {.status = STATE_ERROR, .output = ""};
+    } else {
+      printf("child: Argument is not a valid file\n");
+      return {.status = STATE_ERROR, .output = ""};
+    }
   }
   printf("Unknown Command %s\n", command.c_str());
   return {
