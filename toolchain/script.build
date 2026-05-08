@@ -1,0 +1,5 @@
+SRC="lua"
+
+step "preprocess" {
+  write $(preprocess $SRC/main.lua -D abc) -o dest.lua
+}

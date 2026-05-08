@@ -30,8 +30,8 @@ successfull_t preprocess(std::string inFile, std::unordered_map<std::string, std
 
         successfull_t included = preprocess(file, defines, currentFile.parent_path());
         if(included.status == STATE_SUCCESS) {
-          result.append(included.output);
           result.append("\n");
+          result.append(included.output);
         } else {
           printf("preprocess: Error in --#include\n");
           return {
@@ -47,7 +47,7 @@ successfull_t preprocess(std::string inFile, std::unordered_map<std::string, std
   }
 
   in.close();
-
+  result.append("\n");
   return {
     .status = STATE_SUCCESS,
     .output = result,

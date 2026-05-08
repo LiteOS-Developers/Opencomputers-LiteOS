@@ -10,7 +10,7 @@ INSTALL_DIR := ../bin
 TARGET := $(BIN_DIR)/toolchain
 
 # Flags
-CXXFLAGS := -std=c++17 -Wall -Wextra -MMD -MP -Os -O2
+XXFLAGS := -std=c++20 -Wall -Wextra -MMD -MP -Os -O2
 LDFLAGS :=
 
 SRCS := $(shell find $(SRC_DIR) -name '*.cpp')

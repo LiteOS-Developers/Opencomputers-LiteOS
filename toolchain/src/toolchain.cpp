@@ -35,7 +35,9 @@ int main(int argc, char* argv[]) {
     printf("Usage: toolchain <build.script>\n");
     return -1;
   }
-  
+
+  registerCommands();
+
   if(!runFile(std::string(argv[1]))) return -1;
   return 0;
 }

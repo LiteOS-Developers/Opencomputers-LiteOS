@@ -7,20 +7,21 @@
 #include "./common.h"
 #include "preprocess/preprocess.h"
 #include "runCommand.h"
+#include <map>
 
-enum argtype_type_t {
-  ARGTYPE_SUBCOMMAND,
-  ARGTYPE_VALUE,
+class ICommand {
+  public:
+    virtual successfull_t execute(std::map<std::string, argumentValue_t> args) = 0;
+    std::map<std::string, ArgumentValueType> m_arguments;
+    std::string m_name;
 };
 
-struct argtype {
-  argtype_type_t type;
-  std::string value;
-};
-
-
-
+void registerCommands();
 successfull_t execute(std::string command, std::string opts, table& globals, table& locals);
- 
+
+#include "preprocess/command.h"
+#include "command/echo.h"
+#include "command/write.h"
+
 
 #endif
