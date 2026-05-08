@@ -22,6 +22,6 @@ successfull_t execute(std::string command, std::string opts, table& globals, tab
 #include "preprocess/command.h"
 #include "command/echo.h"
 #include "command/write.h"
-
+#include "command/list.h"
 
 #endif

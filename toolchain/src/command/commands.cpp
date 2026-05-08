@@ -1,5 +1,6 @@
 #include "./echo.h"
 #include "./write.h"
+#include "./list.h"
 
 EchoCommand::EchoCommand() {
   m_name = "echo";
@@ -9,6 +10,11 @@ EchoCommand::EchoCommand() {
 WriteCommand::WriteCommand() {
   m_name = "write";
   m_arguments = std::map<std::string, ArgumentValueType>{{"", ARGUMENT_VALUE_VALUE}, {"-o", ARGUMENT_VALUE_FLAG_VALUE}};
+}
+
+ListCommand::ListCommand() {
+  m_name = "list";
+  m_arguments = std::map<std::string, ArgumentValueType>{{"", ARGUMENT_VALUE_VALUE}, {"recursive", ARGUMENT_VALUE_FLAG_TOGGLE}, {"-type", ARGUMENT_VALUE_FLAG_VALUE}};
 }
 
 successfull_t EchoCommand::execute(std::map<std::string, argumentValue_t> args) {
@@ -44,4 +50,41 @@ successfull_t WriteCommand::execute(std::map<std::string, argumentValue_t> args)
   }
   out << text;
   return {.status = STATE_SUCCESS, .output = "",};
+}
+
+successfull_t ListCommand::execute(std::map<std::string, argumentValue_t> args) {
+  if(args.size() < 1 || !args.contains("")) {
+    printf("list: Invalid Usage. Usage: list <path> <recursive> --type file/dir\n");
+    return {.status = STATE_ERROR, .output = ""};
+  }
+  std::filesystem::path path = std::filesystem::path(std::get<std::string>(args[""].data));
+  if(!std::filesystem::exists(path)) {
+    printf("list: Path does not exists\n");
+    return {.status = STATE_ERROR, .output = ""};
+  }
+
+  std::string type = "";
+  if(args.contains("-type")) {
+    std::string typeValue = std::get<std::string>(args["-type"].data);
+    if(typeValue == "file") type = "file";
+    if(typeValue == "dir") type = "dir";
+  }
+  bool recursive = args.contains("recursive");
+
+  std::string result = "";
+  if(recursive) { 
+    for(auto const& entry : std::filesystem::recursive_directory_iterator(path)) {
+      if((entry.is_directory() && type == "dir") || (entry.is_regular_file() && type == "file")) {
+        result += entry.path().string() + " ";
+      }
+    } 
+  } else {
+     for(auto const& entry : std::filesystem::directory_iterator(path)) {
+       if((entry.is_directory() && type == "dir") || (entry.is_regular_file() && type == "file")) {
+         result += entry.path().string() + " ";
+       }
+    }
+  }
+
+  return {.status = STATE_SUCCESS, .output = result};
 }
