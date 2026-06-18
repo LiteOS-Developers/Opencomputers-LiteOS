@@ -10,8 +10,8 @@ INSTALL_DIR := ../bin
 TARGET := $(BIN_DIR)/toolchain
 
 # Flags
-XXFLAGS := -std=c++20 -Wall -Wextra -MMD -MP -Os -O2
-LDFLAGS :=
+CXXFLAGS := -std=c++20 -Wall -Wextra -MMD -MP -g 
+LDFLAGS := -g
 
 SRCS := $(shell find $(SRC_DIR) -name '*.cpp')
 
@@ -44,5 +44,3 @@ install: $(TARGET)
 	strip $(TARGET)
 	cp $(TARGET) $(INSTALL_DIR)
 
-
-.PHONY: all clean rebuild run

@@ -23,5 +23,6 @@ successfull_t execute(std::string command, std::string opts, table& globals, tab
 #include "command/echo.h"
 #include "command/write.h"
 #include "command/list.h"
+#include "command/child.h"
 
 #endif

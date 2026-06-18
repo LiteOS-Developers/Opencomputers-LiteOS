@@ -1,6 +1,8 @@
 #include "./echo.h"
 #include "./write.h"
 #include "./list.h"
+#include "./child.h"
+#include "../runCommand.h"
 
 EchoCommand::EchoCommand() {
   m_name = "echo";
@@ -15,6 +17,23 @@ WriteCommand::WriteCommand() {
 ListCommand::ListCommand() {
   m_name = "list";
   m_arguments = std::map<std::string, ArgumentValueType>{{"", ARGUMENT_VALUE_VALUE}, {"recursive", ARGUMENT_VALUE_FLAG_TOGGLE}, {"-type", ARGUMENT_VALUE_FLAG_VALUE}};
+}
+
+ChildCommand::ChildCommand() {
+  m_name = "child";
+  m_arguments = std::map<std::string, ArgumentValueType>{{"", ARGUMENT_VALUE_VALUE}};
+}
+
+successfull_t ChildCommand::execute(std::map<std::string, argumentValue_t> args) {
+  if(!args.contains("")) {
+    printf("child: missing argument\n");
+    return {.status = STATE_ERROR, .output = ""};
+  }
+  if(runFile(std::get<std::string>(args[""].data))) {
+    return {.status = STATE_SUCCESS, .output = ""};
+  }
+  printf("child: Subfile returned error\n");
+  return {.status = STATE_ERROR, .output = ""};
 }
 
 successfull_t EchoCommand::execute(std::map<std::string, argumentValue_t> args) {
@@ -88,3 +107,5 @@ successfull_t ListCommand::execute(std::map<std::string, argumentValue_t> args) 
 
   return {.status = STATE_SUCCESS, .output = result};
 }
+
+

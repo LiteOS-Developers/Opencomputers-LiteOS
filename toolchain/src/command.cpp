@@ -8,6 +8,7 @@ void registerCommands() {
   commands["echo"] = new EchoCommand();
   commands["write"] = new WriteCommand();
   commands["list"] = new ListCommand();
+  commands["child"] = new ChildCommand();
 }
 
 successfull_t execute(std::string commandName, std::string args, table& globals, table& locals) {
