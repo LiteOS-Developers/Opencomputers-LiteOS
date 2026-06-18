@@ -14,4 +14,11 @@ class WriteCommand: public ICommand
     successfull_t execute(std::map<std::string, argumentValue_t> args) override;
 };
 
+class ReadCommand: public ICommand
+{
+  public: 
+    ReadCommand();
+    successfull_t execute(std::map<std::string, argumentValue_t> args) override;
+};
+
 #endif

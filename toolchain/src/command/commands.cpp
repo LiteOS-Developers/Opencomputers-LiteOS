@@ -24,6 +24,11 @@ ChildCommand::ChildCommand() {
   m_arguments = std::map<std::string, ArgumentValueType>{{"", ARGUMENT_VALUE_VALUE}};
 }
 
+ReadCommand::ReadCommand() {
+  m_name = "read";
+  m_arguments = std::map<std::string, ArgumentValueType>{{"", ARGUMENT_VALUE_VALUE}};
+}
+
 successfull_t ChildCommand::execute(std::map<std::string, argumentValue_t> args) {
   if(!args.contains("")) {
     printf("child: missing argument\n");
@@ -106,6 +111,28 @@ successfull_t ListCommand::execute(std::map<std::string, argumentValue_t> args) 
   }
 
   return {.status = STATE_SUCCESS, .output = result};
+}
+
+successfull_t ReadCommand::execute(std::map<std::string, argumentValue_t> args) {
+  if(!args.contains("")) {
+    printf("read: missing input file\n");
+    return {.status = STATE_ERROR, .output = ""};
+  }
+
+  std::string inFile = std::get<std::string>(args["-o"].data);
+  std::ifstream file(inFile);
+  
+  if(!file) {
+    printf("read: Failed to read from %s: Destination does not exists\n", outFile.c_str());
+    return {.status = STATE_ERROR, .output = ""};
+  }
+  file.seekg(0, std::ios::end);
+  size_t size = t.tellg();
+  file.seekg(0);
+  std::string buffer(size, ' ');
+  file.read(&buffer[0], size);
+
+  return {.status = STATE_SUCCESS, .output = buffer};
 }
 
 
